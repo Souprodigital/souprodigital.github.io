@@ -1,0 +1,6 @@
+{
+  "name": "SouArchitect Media Kit",
+  "description": "Premium, investor-grade interactive design system and media kit presentation for the validation-first AI publishing platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
