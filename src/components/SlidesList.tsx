@@ -51,7 +51,12 @@ import {
   appendEmailToDoc,
   createGoogleSheet,
   appendEmailToSheet,
-  sendConfirmationEmail
+  sendConfirmationEmail,
+  saveWorkspaceConfigInCloud,
+  loadWorkspaceConfigFromCloud,
+  saveLeadInCloud,
+  getUnsyncedLeadsFromCloud,
+  markLeadAsSyncedInCloud
 } from '../lib/googleDocsAuth';
 import {
   MarketValidationInput,
@@ -1792,7 +1797,7 @@ export function ContactPage() {
     const logs = JSON.parse(localStorage.getItem('sou_synced_logs') || '[]');
     setSyncedLogs(logs);
 
-    // 3. Recover workspace settings
+    // 3. Recover workspace settings locally as instant fallback
     const storedType = (localStorage.getItem('sou_workspace_type') as 'sheets' | 'docs') || 'sheets';
     const storedTargetId = localStorage.getItem('sou_workspace_target_id') || localStorage.getItem('sou_google_doc_id') || '';
     const storedTargetTitle = localStorage.getItem('sou_workspace_target_title') || localStorage.getItem('sou_google_doc_title') || '';
@@ -1807,6 +1812,24 @@ export function ContactPage() {
       setExistingUrlInput(storedTargetUrl);
     }
     if (storedEmail) setConnectedEmail(storedEmail);
+
+    // Dynamic Cloud Sync: Pull current Sheet/Doc configuration from Firestore
+    loadWorkspaceConfigFromCloud().then((cloudConfig) => {
+      if (cloudConfig) {
+        setWorkspaceType(cloudConfig.workspaceType);
+        setTargetId(cloudConfig.targetId);
+        setTargetTitle(cloudConfig.targetTitle);
+        setTargetUrl(cloudConfig.targetUrl);
+        setExistingUrlInput(cloudConfig.targetUrl);
+        
+        localStorage.setItem('sou_workspace_type', cloudConfig.workspaceType);
+        localStorage.setItem('sou_workspace_target_id', cloudConfig.targetId);
+        localStorage.setItem('sou_workspace_target_title', cloudConfig.targetTitle);
+        localStorage.setItem('sou_workspace_target_url', cloudConfig.targetUrl);
+      }
+    }).catch(err => {
+      console.warn("Cloud config load failed (using local cache):", err);
+    });
 
     // 4. Initialize Auth listener
     const unsubscribe = initAuth(
@@ -1825,6 +1848,81 @@ export function ContactPage() {
 
     return () => unsubscribe();
   }, []);
+
+  // Synchronizes any unsynced leads from cloud database to connected Google Sheet or Doc
+  const syncUnsyncedLeads = async (currentAccessToken = accessToken, currentTargetId = targetId, currentWorkspaceType = workspaceType, currentTargetTitle = targetTitle) => {
+    if (!currentAccessToken || !currentTargetId) return;
+    try {
+      const unsynced = await getUnsyncedLeadsFromCloud();
+      if (!unsynced || unsynced.length === 0) return;
+      
+      console.log(`[Sync] Found ${unsynced.length} unsynced leads in cloud database. Starting push...`);
+      for (const lead of unsynced) {
+        try {
+          if (currentWorkspaceType === 'sheets') {
+            await appendEmailToSheet(currentAccessToken, currentTargetId, lead.email);
+          } else {
+            await appendEmailToDoc(currentAccessToken, currentTargetId, lead.email);
+          }
+          
+          try {
+            await sendConfirmationEmail(currentAccessToken, lead.email, currentTargetTitle, connectedEmail || undefined);
+          } catch (emailErr) {
+            console.error("Gmail sync email failed:", emailErr);
+          }
+          
+          await markLeadAsSyncedInCloud(lead.id);
+          
+          // Log success state locally
+          setSyncedLogs(prev => {
+            const up = [{ email: lead.email, timestamp: lead.timestamp, status: 'success' }, ...prev];
+            localStorage.setItem('sou_synced_logs', JSON.stringify(up));
+            return up;
+          });
+        } catch (leadSyncErr) {
+          console.error(`Failed to sync lead ${lead.email}:`, leadSyncErr);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to run unsynced leads sweep:", err);
+    }
+  };
+
+  const updateWorkspaceConfig = async (newType: 'sheets' | 'docs', newId: string, newTitle: string, newUrl: string) => {
+    setWorkspaceType(newType);
+    setTargetId(newId);
+    setTargetTitle(newTitle);
+    setTargetUrl(newUrl);
+
+    localStorage.setItem('sou_workspace_type', newType);
+    if (newId) {
+      localStorage.setItem('sou_workspace_target_id', newId);
+      localStorage.setItem('sou_workspace_target_title', newTitle);
+      localStorage.setItem('sou_workspace_target_url', newUrl);
+      try {
+        await saveWorkspaceConfigInCloud(newId, newTitle, newUrl, newType);
+        // Sync any pending items right away using newly linked targets!
+        if (accessToken) {
+          await syncUnsyncedLeads(accessToken, newId, newType, newTitle);
+        }
+      } catch (err) {
+        console.error("Cloud config save failed:", err);
+      }
+    } else {
+      localStorage.removeItem('sou_workspace_target_id');
+      localStorage.removeItem('sou_workspace_target_title');
+      localStorage.removeItem('sou_workspace_target_url');
+      localStorage.removeItem('sou_google_doc_id');
+      localStorage.removeItem('sou_google_doc_title');
+      localStorage.removeItem('sou_google_doc_url');
+    }
+  };
+
+  useEffect(() => {
+    if (accessToken && targetId) {
+      syncUnsyncedLeads();
+    }
+  }, [accessToken, targetId]);
 
   const handleGoogleLogin = async () => {
     setIsConnecting(true);
@@ -1862,27 +1960,13 @@ export function ContactPage() {
     try {
       if (workspaceType === 'sheets') {
         const sheet = await createGoogleSheet(accessToken, "SouArchitect Booked Leads");
-        setTargetId(sheet.spreadsheetId);
-        setTargetTitle(sheet.title);
-        setTargetUrl(sheet.spreadsheetUrl);
+        await updateWorkspaceConfig('sheets', sheet.spreadsheetId, sheet.title, sheet.spreadsheetUrl);
         setExistingUrlInput(sheet.spreadsheetUrl);
-        
-        localStorage.setItem('sou_workspace_type', 'sheets');
-        localStorage.setItem('sou_workspace_target_id', sheet.spreadsheetId);
-        localStorage.setItem('sou_workspace_target_title', sheet.title);
-        localStorage.setItem('sou_workspace_target_url', sheet.spreadsheetUrl);
       } else {
         const doc = await createGoogleDoc(accessToken, "SouArchitect Booked Leads Directory");
         const url = `https://docs.google.com/document/d/${doc.documentId}/edit`;
-        setTargetId(doc.documentId);
-        setTargetTitle(doc.title);
-        setTargetUrl(url);
+        await updateWorkspaceConfig('docs', doc.documentId, doc.title, url);
         setExistingUrlInput(url);
-        
-        localStorage.setItem('sou_workspace_type', 'docs');
-        localStorage.setItem('sou_workspace_target_id', doc.documentId);
-        localStorage.setItem('sou_workspace_target_title', doc.title);
-        localStorage.setItem('sou_workspace_target_url', url);
       }
     } catch (err: any) {
       console.error(err);
@@ -1901,44 +1985,21 @@ export function ContactPage() {
     
     if (sheetMatch && sheetMatch[1]) {
       const parsedId = sheetMatch[1];
-      setTargetId(parsedId);
-      setTargetTitle("Linked Google Spreadsheet");
       const parsedUrl = `https://docs.google.com/spreadsheets/d/${parsedId}/edit`;
-      setTargetUrl(parsedUrl);
-      setWorkspaceType('sheets');
-      
-      localStorage.setItem('sou_workspace_type', 'sheets');
-      localStorage.setItem('sou_workspace_target_id', parsedId);
-      localStorage.setItem('sou_workspace_target_title', "Linked Google Spreadsheet");
-      localStorage.setItem('sou_workspace_target_url', parsedUrl);
+      updateWorkspaceConfig('sheets', parsedId, "Linked Google Spreadsheet", parsedUrl);
       setErrorMsg(null);
     } else if (docMatch && docMatch[1]) {
       const parsedId = docMatch[1];
-      setTargetId(parsedId);
-      setTargetTitle("Linked Google Document");
       const parsedUrl = `https://docs.google.com/document/d/${parsedId}/edit`;
-      setTargetUrl(parsedUrl);
-      setWorkspaceType('docs');
-      
-      localStorage.setItem('sou_workspace_type', 'docs');
-      localStorage.setItem('sou_workspace_target_id', parsedId);
-      localStorage.setItem('sou_workspace_target_title', "Linked Google Document");
-      localStorage.setItem('sou_workspace_target_url', parsedUrl);
+      updateWorkspaceConfig('docs', parsedId, "Linked Google Document", parsedUrl);
       setErrorMsg(null);
     } else {
       if (val.length > 20 && !val.includes('/')) {
-        setTargetId(val);
         const guessedType = workspaceType;
-        setTargetTitle(guessedType === 'sheets' ? "Linked Google Spreadsheet" : "Linked Google Document");
         const parsedUrl = guessedType === 'sheets'
           ? `https://docs.google.com/spreadsheets/d/${val}/edit`
           : `https://docs.google.com/document/d/${val}/edit`;
-        setTargetUrl(parsedUrl);
-        
-        localStorage.setItem('sou_workspace_type', guessedType);
-        localStorage.setItem('sou_workspace_target_id', val);
-        localStorage.setItem('sou_workspace_target_title', guessedType === 'sheets' ? "Linked Google Spreadsheet" : "Linked Google Document");
-        localStorage.setItem('sou_workspace_target_url', parsedUrl);
+        updateWorkspaceConfig(guessedType, val, guessedType === 'sheets' ? "Linked Google Spreadsheet" : "Linked Google Document", parsedUrl);
         setErrorMsg(null);
       }
     }
@@ -2003,9 +2064,18 @@ export function ContactPage() {
     
     setIsBooking(true);
     setErrorMsg(null);
+    const leadTimestamp = new Date().toLocaleString();
     
     try {
       if (accessToken && targetId) {
+        // Direct integration mode (e.g. running locally as developer or configured owner)
+        // Save to Firestore first as synced = true
+        try {
+          await saveLeadInCloud(demoEmail, leadTimestamp, true);
+        } catch (dbErr) {
+          console.error("Failed to save lead in cloud database, but proceeding with direct append:", dbErr);
+        }
+
         // Append live to Active Workspace API
         if (workspaceType === 'sheets') {
           await appendEmailToSheet(accessToken, targetId, demoEmail);
@@ -2015,20 +2085,27 @@ export function ContactPage() {
         
         // Dispatches the reservation email immediately inside real-time handler
         try {
-          await sendConfirmationEmail(accessToken, demoEmail, targetTitle);
+          await sendConfirmationEmail(accessToken, demoEmail, targetTitle, connectedEmail || undefined);
         } catch (emailErr: any) {
           console.error("Automated email dispatch failed during real-time booking:", emailErr);
           setErrorMsg(`Synced to sheet, but email transmission encountered an issue: ${emailErr.message}`);
         }
 
         // Save to synced logs
-        const newLogs = [{ email: demoEmail, timestamp: new Date().toLocaleString(), status: 'success' }, ...syncedLogs];
+        const newLogs = [{ email: demoEmail, timestamp: leadTimestamp, status: 'success' }, ...syncedLogs];
         setSyncedLogs(newLogs);
         localStorage.setItem('sou_synced_logs', JSON.stringify(newLogs));
       } else {
-        // Queue locally
+        // Public Visitor / Offline Mode: store persistently in Cloud Firestore first
+        try {
+          await saveLeadInCloud(demoEmail, leadTimestamp, false);
+        } catch (dbErr: any) {
+          console.error("Failed to store lead in Firestore:", dbErr);
+        }
+
+        // Secondary Backup locally
         const existingQueue = JSON.parse(localStorage.getItem('sou_offline_queue') || '[]');
-        const newQueue = [{ email: demoEmail, timestamp: new Date().toLocaleString() }, ...existingQueue];
+        const newQueue = [{ email: demoEmail, timestamp: leadTimestamp }, ...existingQueue];
         localStorage.setItem('sou_offline_queue', JSON.stringify(newQueue));
         setOfflineQueue(newQueue);
       }
@@ -2036,11 +2113,18 @@ export function ContactPage() {
       setIsBooked(true);
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || 'Direct synchronization offline. Saved in local backup queue.');
+      setErrorMsg(err.message || 'Direct synchronization offline. Saved securely in cloud/local backup queue.');
       
-      // Backup locally
+      // Store lead in Firestore as unsynced
+      try {
+        await saveLeadInCloud(demoEmail, leadTimestamp, false);
+      } catch (dbErr) {
+        console.error("Firestore failure during backup:", dbErr);
+      }
+
+      // Secondary Backup locally
       const existingQueue = JSON.parse(localStorage.getItem('sou_offline_queue') || '[]');
-      const newQueue = [{ email: demoEmail, timestamp: new Date().toLocaleString() }, ...existingQueue];
+      const newQueue = [{ email: demoEmail, timestamp: leadTimestamp }, ...existingQueue];
       localStorage.setItem('sou_offline_queue', JSON.stringify(newQueue));
       setOfflineQueue(newQueue);
       
@@ -2357,6 +2441,9 @@ export function ContactPage() {
                           onClick={() => {
                             setWorkspaceType('sheets');
                             localStorage.setItem('sou_workspace_type', 'sheets');
+                            if (targetId) {
+                              saveWorkspaceConfigInCloud(targetId, targetTitle, targetUrl, 'sheets').catch(err => console.error(err));
+                            }
                           }}
                           className={`flex-1 py-1 px-1.5 rounded transition-all text-center uppercase font-bold cursor-pointer ${
                             workspaceType === 'sheets'
@@ -2371,6 +2458,9 @@ export function ContactPage() {
                           onClick={() => {
                             setWorkspaceType('docs');
                             localStorage.setItem('sou_workspace_type', 'docs');
+                            if (targetId) {
+                              saveWorkspaceConfigInCloud(targetId, targetTitle, targetUrl, 'docs').catch(err => console.error(err));
+                            }
                           }}
                           className={`flex-1 py-1 px-1.5 rounded transition-all text-center uppercase font-bold cursor-pointer ${
                             workspaceType === 'docs'
@@ -2449,16 +2539,8 @@ export function ContactPage() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setTargetId('');
-                                  setTargetTitle('');
-                                  setTargetUrl('');
+                                  updateWorkspaceConfig(workspaceType, '', '', '');
                                   setExistingUrlInput('');
-                                  localStorage.removeItem('sou_workspace_target_id');
-                                  localStorage.removeItem('sou_workspace_target_title');
-                                  localStorage.removeItem('sou_workspace_target_url');
-                                  localStorage.removeItem('sou_google_doc_id');
-                                  localStorage.removeItem('sou_google_doc_title');
-                                  localStorage.removeItem('sou_google_doc_url');
                                 }}
                                 className="text-[8.5px] font-mono text-red-400 hover:text-red-300 uppercase cursor-pointer font-bold"
                               >

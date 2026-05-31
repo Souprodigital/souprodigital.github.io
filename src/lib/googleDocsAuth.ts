@@ -1,9 +1,22 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
+import { 
+  getFirestore, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  collection, 
+  addDoc, 
+  getDocs, 
+  query, 
+  where, 
+  updateDoc 
+} from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+export const db = getFirestore(app);
 
 const provider = new GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/spreadsheets');
@@ -279,7 +292,8 @@ export async function appendEmailToDoc(accessToken: string, documentId: string, 
 export async function sendConfirmationEmail(
   accessToken: string,
   recipientEmail: string,
-  targetTitle: string
+  targetTitle: string,
+  senderEmail?: string
 ): Promise<any> {
   const subject = `Booking Confirmed: Live Orientation Session`;
   const body = `
@@ -318,8 +332,9 @@ export async function sendConfirmationEmail(
   `;
 
   // Construct RFC 2822 email
+  const fromAddress = senderEmail ? `"Soupro Digital Services" <${senderEmail}>` : `"Soupro Digital Services" <me>`;
   const emailContent = [
-    `From: "Soupro Digital Services" <me>`,
+    `From: ${fromAddress}`,
     `To: ${recipientEmail}`,
     `Subject: ${subject}`,
     `Content-Type: text/html; charset=utf-8`,
@@ -352,4 +367,127 @@ export async function sendConfirmationEmail(
   }
 
   return response.json();
+}
+
+/**
+ * Cloud persistence for configurations and leads
+ */
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+  };
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+export async function saveWorkspaceConfigInCloud(
+  targetId: string,
+  targetTitle: string,
+  targetUrl: string,
+  workspaceType: 'sheets' | 'docs'
+): Promise<void> {
+  const path = 'workspace_config/current';
+  try {
+    await setDoc(doc(db, 'workspace_config', 'current'), {
+      targetId,
+      targetTitle,
+      targetUrl,
+      workspaceType,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function loadWorkspaceConfigFromCloud(): Promise<{
+  targetId: string;
+  targetTitle: string;
+  targetUrl: string;
+  workspaceType: 'sheets' | 'docs';
+} | null> {
+  const path = 'workspace_config/current';
+  try {
+    const docSnap = await getDoc(doc(db, 'workspace_config', 'current'));
+    if (docSnap.exists()) {
+      return docSnap.data() as any;
+    }
+    return null;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, path);
+  }
+}
+
+export async function saveLeadInCloud(
+  email: string,
+  timestamp: string,
+  synced: boolean
+): Promise<string> {
+  const path = 'leads';
+  try {
+    const docRef = await addDoc(collection(db, 'leads'), {
+      email,
+      timestamp,
+      synced,
+      createdAt: new Date().toISOString()
+    });
+    return docRef.id;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, path);
+  }
+}
+
+export async function getUnsyncedLeadsFromCloud(): Promise<Array<{ id: string; email: string; timestamp: string; synced: boolean }>> {
+  const path = 'leads';
+  try {
+    const q = query(collection(db, 'leads'), where('synced', '==', false));
+    const querySnapshot = await getDocs(q);
+    const results: any[] = [];
+    querySnapshot.forEach((doc) => {
+      results.push({ id: doc.id, ...doc.data() });
+    });
+    return results;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+  }
+}
+
+export async function markLeadAsSyncedInCloud(leadId: string): Promise<void> {
+  const path = `leads/${leadId}`;
+  try {
+    await updateDoc(doc(db, 'leads', leadId), {
+      synced: true
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+  }
 }

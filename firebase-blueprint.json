@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "WorkspaceConfig": {
+      "title": "WorkspaceConfig",
+      "description": "Persistence layer for the owner's Google target Sheet/Doc settings",
+      "type": "object",
+      "properties": {
+        "targetId": { "type": "string", "description": "The Google Sheets or Docs resource identifier" },
+        "targetTitle": { "type": "string", "description": "Display title of the linked target" },
+        "targetUrl": { "type": "string", "description": "Active web URL of the linked resource" },
+        "workspaceType": { "type": "string", "description": "Type of resource: sheets or docs", "enum": ["sheets", "docs"] },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last time config was set" }
+      },
+      "required": ["targetId", "targetTitle", "targetUrl", "workspaceType"]
+    },
+    "Lead": {
+      "title": "Lead",
+      "description": "Incoming leads/bookings registered by visitors",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "description": "The visitor's email address" },
+        "timestamp": { "type": "string", "description": "The ISO/locale timestamp of booking" },
+        "synced": { "type": "boolean", "description": "Flag representing whether it has been pushed to Google Workspace" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Database insertion timestamp" }
+      },
+      "required": ["email", "timestamp", "synced"]
+    }
+  },
+  "firestore": {
+    "/workspace_config/{configId}": {
+      "schema": "WorkspaceConfig",
+      "description": "Global config for Google Sheets and Docs live integration sync target"
+    },
+    "/leads/{leadId}": {
+      "schema": "Lead",
+      "description": "Collection of incoming book/registration leads"
+    }
+  }
+}
