@@ -50,7 +50,8 @@ import {
   createGoogleDoc,
   appendEmailToDoc,
   createGoogleSheet,
-  appendEmailToSheet
+  appendEmailToSheet,
+  sendConfirmationEmail
 } from '../lib/googleDocsAuth';
 import {
   MarketValidationInput,
@@ -1765,6 +1766,22 @@ export function ContactPage() {
   const [syncedLogs, setSyncedLogs] = useState<Array<{ email: string; timestamp: string; status: string }>>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showAdminDetails, setShowAdminDetails] = useState<boolean>(false);
+  const [emailPreviewTab, setEmailPreviewTab] = useState<'directory' | 'email'>('directory');
+
+  // Administrator restriction and authorization states
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(() => {
+    return localStorage.getItem('sou_admin_unlocked') === 'true';
+  });
+  const [showPasscodeInput, setShowPasscodeInput] = useState<boolean>(false);
+  const [adminPasscode, setAdminPasscode] = useState<string>('');
+  const [adminPasscodeError, setAdminPasscodeError] = useState<boolean>(false);
+
+  // Detect development mode based on URL or hostname
+  const isDevMode = typeof window !== 'undefined' && (
+    window.location.hostname.includes('localhost') || 
+    window.location.hostname.includes('127.0.0.1') || 
+    window.location.hostname.includes('-dev-')
+  );
 
   useEffect(() => {
     // 1. Recover offline queue
@@ -1942,6 +1959,14 @@ export function ContactPage() {
         } else {
           await appendEmailToDoc(accessToken, targetId, item.email);
         }
+        
+        // Dispatches the automated reservation email securely via Gmail API
+        try {
+          await sendConfirmationEmail(accessToken, item.email, targetTitle);
+        } catch (emailErr: any) {
+          console.error("Automated email delivery failed for user during bulk sync:", emailErr);
+        }
+
         tempSyncedLogs.push({
           email: item.email,
           timestamp: item.timestamp,
@@ -1988,6 +2013,14 @@ export function ContactPage() {
           await appendEmailToDoc(accessToken, targetId, demoEmail);
         }
         
+        // Dispatches the reservation email immediately inside real-time handler
+        try {
+          await sendConfirmationEmail(accessToken, demoEmail, targetTitle);
+        } catch (emailErr: any) {
+          console.error("Automated email dispatch failed during real-time booking:", emailErr);
+          setErrorMsg(`Synced to sheet, but email transmission encountered an issue: ${emailErr.message}`);
+        }
+
         // Save to synced logs
         const newLogs = [{ email: demoEmail, timestamp: new Date().toLocaleString(), status: 'success' }, ...syncedLogs];
         setSyncedLogs(newLogs);
@@ -2203,295 +2236,473 @@ export function ContactPage() {
             )}
 
             {/* Google Workspace Setup Console */}
-            <div className="pt-2 border-t border-gray-800">
-              <button
-                type="button"
-                onClick={() => setShowAdminDetails(!showAdminDetails)}
-                className="w-full flex items-center justify-between py-1.5 px-2 bg-gray-950 hover:bg-gray-900 border border-gray-800 text-gray-400 hover:text-white rounded text-[10px] font-mono transition-all uppercase tracking-wider font-bold"
-              >
-                <span className="flex items-center gap-1.5">
-                  <Settings className="w-3 h-3 text-validation-orange animate-spin-slow" />
-                  Google Workspace Console
-                </span>
-                <span className="text-gray-500 font-mono text-[9px] hover:text-validation-orange">
-                  {showAdminDetails ? '[HIDE]' : '[EXPAND]'}
-                </span>
-              </button>
+            {isDevMode && (
+              <div className="pt-2 border-t border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isAdminUnlocked) {
+                      setShowAdminDetails(!showAdminDetails);
+                      setShowPasscodeInput(false);
+                    } else {
+                      setShowPasscodeInput(!showPasscodeInput);
+                    }
+                    setAdminPasscodeError(false);
+                  }}
+                  className={`w-full flex items-center justify-between py-1.5 px-2 hover:bg-gray-900 border text-[10px] font-mono transition-all uppercase tracking-wider font-bold rounded ${
+                    isAdminUnlocked 
+                      ? 'bg-gray-950 border-gray-800 text-gray-400 hover:text-white' 
+                      : showPasscodeInput 
+                        ? 'bg-amber-950/20 border-amber-500/30 text-amber-500' 
+                        : 'bg-gray-950 border-gray-800 text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    {isAdminUnlocked ? (
+                      <Settings className="w-3 h-3 text-emerald-400 animate-spin-slow" />
+                    ) : (
+                      <Lock className="w-3 h-3 text-amber-500" />
+                    )}
+                    Google Workspace Console
+                  </span>
+                  <span className="text-gray-500 font-mono text-[9px] hover:text-validation-orange">
+                    {isAdminUnlocked ? (showAdminDetails ? '[HIDE]' : '[EXPAND]') : (showPasscodeInput ? '[LOCKED]' : '[LOCKED]')}
+                  </span>
+                </button>
 
-              {showAdminDetails && (
-                <div className="mt-3 p-3 bg-gray-950 border border-gray-800 rounded-lg space-y-3 text-xs font-sans">
-                  {/* Workspace Target Selection */}
-                  <div className="space-y-1.5">
-                    <span className="text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest block">
-                      Lead Capture Destination
-                    </span>
-                    <div className="flex gap-2 p-1 bg-gray-900 border border-gray-800 rounded-lg text-[9px] font-mono">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setWorkspaceType('sheets');
-                          localStorage.setItem('sou_workspace_type', 'sheets');
+                {showPasscodeInput && !isAdminUnlocked && (
+                  <div className="mt-2.5 p-3 bg-gray-950 border border-amber-500/20 rounded-lg space-y-2 text-[10.5px] font-mono leading-relaxed">
+                    <div className="flex items-center gap-1.5 text-amber-500 font-bold uppercase tracking-wider text-[9px]">
+                      <Lock className="w-3 h-3 animate-pulse" />
+                      <span>Administrative Authorization Required</span>
+                    </div>
+                    <p className="text-gray-400">
+                      To protect your Google Sheets and Docs live integration in public/sharing mode, this setup panel is secure. Authenticate below to customize layout settings.
+                    </p>
+                    <form 
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const key = adminPasscode.trim().toLowerCase();
+                        if (key === 'admin123' || key === 'banikag1' || key === 'banikag1@gmail.com' || key === 'soupro') {
+                          setIsAdminUnlocked(true);
+                          localStorage.setItem('sou_admin_unlocked', 'true');
+                          setShowAdminDetails(true);
+                          setShowPasscodeInput(false);
+                          setAdminPasscodeError(false);
+                        } else {
+                          setAdminPasscodeError(true);
+                        }
+                      }}
+                      className="flex gap-2"
+                    >
+                      <input
+                        type="password"
+                        value={adminPasscode}
+                        onChange={(e) => {
+                          setAdminPasscode(e.target.value);
+                          setAdminPasscodeError(false);
                         }}
-                        className={`flex-1 py-1 px-1.5 rounded transition-all text-center uppercase font-bold cursor-pointer ${
-                          workspaceType === 'sheets'
-                            ? 'bg-emerald-500 text-gray-950 shadow-sm font-extrabold'
-                            : 'text-gray-400 hover:text-white'
-                        }`}
-                      >
-                        Google Sheets
-                      </button>
+                        placeholder="Enter Admin Passcode / Email..."
+                        className="flex-1 bg-gray-900 border border-gray-800 rounded px-2.5 py-1.5 text-xs text-white placeholder-gray-600 focus:outline-none focus:border-amber-500 font-mono"
+                      />
                       <button
-                        type="button"
-                        onClick={() => {
-                          setWorkspaceType('docs');
-                          localStorage.setItem('sou_workspace_type', 'docs');
-                        }}
-                        className={`flex-1 py-1 px-1.5 rounded transition-all text-center uppercase font-bold cursor-pointer ${
-                          workspaceType === 'docs'
-                            ? 'bg-emerald-500 text-gray-950 shadow-sm font-extrabold'
-                            : 'text-gray-400 hover:text-white'
-                        }`}
+                        type="submit"
+                        className="bg-amber-500 hover:bg-amber-400 text-gray-950 font-sans font-extrabold text-[10.5px] px-3.5 py-1.5 rounded transition-all cursor-pointer whitespace-nowrap uppercase tracking-wider active:scale-95"
                       >
-                        Google Docs
+                        Unlock
                       </button>
+                    </form>
+                    {adminPasscodeError && (
+                      <p className="text-red-400 font-bold text-[8.5px] uppercase tracking-wider animate-pulse">
+                        ❌ Invalid authentication code. Please try again.
+                      </p>
+                    )}
+                    <div className="text-gray-600 text-[8.5px] pt-2 border-t border-gray-900 flex justify-between items-center">
+                      <span>Authorized Owner Email:</span>
+                      <span className="font-bold text-gray-500">banikag1@gmail.com</span>
                     </div>
                   </div>
+                )}
 
-                  {/* Step 1: Authentication */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-center text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest">
-                      <span>Owner Authorization</span>
-                      <span className={accessToken ? 'text-emerald-400 font-bold' : 'text-validation-orange font-bold'}>
-                        {accessToken ? 'Active Session' : 'Offline Mode'}
+                {showAdminDetails && isAdminUnlocked && (
+                  <div className="mt-3 p-3 bg-gray-950 border border-gray-800 rounded-lg space-y-3 text-xs font-sans">
+                    {/* Workspace Admin Session Header */}
+                    <div className="flex justify-between items-center pb-2 border-b border-gray-900">
+                      <span className="text-[9px] font-mono font-bold text-emerald-400 uppercase tracking-widest block flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Secure Console Session Active
                       </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAdminUnlocked(false);
+                          setShowAdminDetails(false);
+                          localStorage.removeItem('sou_admin_unlocked');
+                        }}
+                        className="text-[8.5px] font-mono text-amber-500 hover:text-amber-400 font-bold uppercase cursor-pointer flex items-center gap-1 transition"
+                        title="Lock panel access immediately"
+                      >
+                        <Lock className="w-2.5 h-2.5" /> Lock Console
+                      </button>
                     </div>
 
-                    {!accessToken ? (
-                      <div className="space-y-2">
-                        <p className="text-[10px] text-gray-400 font-normal leading-normal">
-                          Authorize to instantly sync visitors' booked emails straight to your personal Google Sheets or Google Documents.
-                        </p>
+                    {/* Workspace Target Selection */}
+                    <div className="space-y-1.5">
+                      <span className="text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest block">
+                        Lead Capture Destination
+                      </span>
+                      <div className="flex gap-2 p-1 bg-gray-900 border border-gray-800 rounded-lg text-[9px] font-mono">
                         <button
                           type="button"
-                          onClick={handleGoogleLogin}
-                          disabled={isConnecting}
-                          className="w-full flex items-center justify-center gap-2 text-xs py-2 px-3 border border-gray-700 bg-white hover:bg-gray-100 text-gray-900 font-sans font-bold rounded cursor-pointer transition-all disabled:opacity-50"
+                          onClick={() => {
+                            setWorkspaceType('sheets');
+                            localStorage.setItem('sou_workspace_type', 'sheets');
+                          }}
+                          className={`flex-1 py-1 px-1.5 rounded transition-all text-center uppercase font-bold cursor-pointer ${
+                            workspaceType === 'sheets'
+                              ? 'bg-emerald-500 text-gray-950 shadow-sm font-extrabold'
+                              : 'text-gray-400 hover:text-white'
+                          }`}
                         >
-                          <svg className="w-4 h-4 mr-1" viewBox="0 0 48 48">
-                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-                            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-                            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-                            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-                          </svg>
-                          <span>{isConnecting ? 'Signing in...' : 'Sign in with Google'}</span>
+                          Google Sheets
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setWorkspaceType('docs');
+                            localStorage.setItem('sou_workspace_type', 'docs');
+                          }}
+                          className={`flex-1 py-1 px-1.5 rounded transition-all text-center uppercase font-bold cursor-pointer ${
+                            workspaceType === 'docs'
+                              ? 'bg-emerald-500 text-gray-950 shadow-sm font-extrabold'
+                              : 'text-gray-400 hover:text-white'
+                          }`}
+                        >
+                          Google Docs
                         </button>
                       </div>
-                    ) : (
-                      <div className="p-2 rounded bg-emerald-500/5 border border-emerald-500/20 flex justify-between items-center">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <User className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                          <span className="text-[10px] text-gray-300 font-mono truncate">
-                            {connectedEmail}
-                          </span>
+                    </div>
+
+                    {/* Step 1: Authentication */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest">
+                        <span>Owner Authorization</span>
+                        <span className={accessToken ? 'text-emerald-400 font-bold' : 'text-validation-orange font-bold'}>
+                          {accessToken ? 'Active Session' : 'Offline Mode'}
+                        </span>
+                      </div>
+
+                      {!accessToken ? (
+                        <div className="space-y-2">
+                          <p className="text-[10px] text-gray-400 font-normal leading-normal">
+                            Authorize to instantly sync visitors' booked emails straight to your personal Google Sheets or Google Documents.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={handleGoogleLogin}
+                            disabled={isConnecting}
+                            className="w-full flex items-center justify-center gap-2 text-xs py-2 px-3 border border-gray-700 bg-white hover:bg-gray-100 text-gray-900 font-sans font-bold rounded cursor-pointer transition-all disabled:opacity-50"
+                          >
+                            <svg className="w-4 h-4 mr-1" viewBox="0 0 48 48">
+                              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                            </svg>
+                            <span>{isConnecting ? 'Signing in...' : 'Sign in with Google'}</span>
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={handleGoogleLogout}
-                          className="p-1 text-gray-500 hover:text-white transition cursor-pointer"
-                          title="Sign Out"
-                        >
-                          <LogOut className="w-3 h-3 hover:text-red-400" />
-                        </button>
+                      ) : (
+                        <div className="p-2 rounded bg-emerald-500/5 border border-emerald-500/20 flex justify-between items-center">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <User className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            <span className="text-[10px] text-gray-300 font-mono truncate">
+                              {connectedEmail}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleGoogleLogout}
+                            className="p-1 text-gray-500 hover:text-white transition cursor-pointer"
+                            title="Sign Out"
+                          >
+                            <LogOut className="w-3 h-3 hover:text-red-400" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Step 2: GDoc/GSheet ID or Creation */}
+                    {accessToken && (
+                      <div className="space-y-2 pt-2 border-t border-gray-900">
+                        <div className="text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest flex justify-between">
+                          <span>Target {workspaceType === 'sheets' ? 'Spreadsheet' : 'Document'}</span>
+                          <span className="text-gray-500">Google {workspaceType === 'sheets' ? 'Sheets' : 'Docs'} Workspace</span>
+                        </div>
+
+                        {targetId ? (
+                          <div className="p-2 rounded bg-gray-900 border border-gray-800 space-y-1.5 text-[10px]">
+                            <div className="flex justify-between items-center">
+                              <span className="font-semibold text-gray-300 truncate font-mono">
+                                ✓ {targetTitle}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setTargetId('');
+                                  setTargetTitle('');
+                                  setTargetUrl('');
+                                  setExistingUrlInput('');
+                                  localStorage.removeItem('sou_workspace_target_id');
+                                  localStorage.removeItem('sou_workspace_target_title');
+                                  localStorage.removeItem('sou_workspace_target_url');
+                                  localStorage.removeItem('sou_google_doc_id');
+                                  localStorage.removeItem('sou_google_doc_title');
+                                  localStorage.removeItem('sou_google_doc_url');
+                                }}
+                                className="text-[8.5px] font-mono text-red-400 hover:text-red-300 uppercase cursor-pointer font-bold"
+                              >
+                                Disconnect
+                              </button>
+                            </div>
+                            <p className="text-[9px] text-gray-500 truncate font-mono">ID: {targetId}</p>
+                            <a
+                              href={targetUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 hover:underline font-mono text-[9px] font-bold uppercase transition"
+                            >
+                              Open Live {workspaceType === 'sheets' ? 'Google Sheet' : 'Google Doc'} <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <button
+                              type="button"
+                              onClick={handleCreateNewDoc}
+                              disabled={isDocCreating}
+                              className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded bg-validation-orange hover:bg-validation-orange/95 text-gray-950 font-mono text-[10.5px] font-bold uppercase cursor-pointer disabled:opacity-50"
+                            >
+                              {isDocCreating ? (
+                                <span>Creating {workspaceType === 'sheets' ? 'Spreadsheet' : 'Document'}...</span>
+                              ) : (
+                                <>
+                                  <Plus className="w-3.5 h-3.5 shrink-0" />
+                                  <span>Create New Leads {workspaceType === 'sheets' ? 'Sheet' : 'Doc'}</span>
+                                </>
+                              )}
+                            </button>
+
+                            <div className="pt-1.5 space-y-1">
+                              <label className="block text-[8px] font-mono text-gray-500 uppercase font-bold">
+                                Or connect existing {workspaceType === 'sheets' ? 'Spreadsheet' : 'Document'} (ID or URL)
+                              </label>
+                              <input
+                                type="text"
+                                value={existingUrlInput}
+                                onChange={(e) => handleLinkExistingUrl(e.target.value)}
+                                placeholder={workspaceType === 'sheets' ? "https://docs.google.com/spreadsheets/d/..." : "https://docs.google.com/document/d/..."}
+                                className="w-full bg-gray-900 border border-gray-800 rounded px-2 py-1 text-[9.5px] text-white placeholder-gray-600 focus:outline-none focus:border-validation-orange font-mono"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Offline visitor booking Queue */}
+                    {offlineQueue.length > 0 && (
+                      <div className="pt-2 border-t border-gray-900 space-y-2">
+                        <div className="flex justify-between items-center text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest">
+                          <span>Offline Buffer Queue ({offlineQueue.length})</span>
+                          <span className="text-yellow-500 font-bold">Unsynced Live Logs</span>
+                        </div>
+                        
+                        <div className="max-h-20 overflow-y-auto bg-gray-900 border border-gray-800 rounded p-1.5 text-[8.5px] font-mono text-gray-400 space-y-1">
+                          {offlineQueue.map((item, qIdx) => (
+                            <div key={qIdx} className="flex justify-between border-b border-gray-950 pb-0.5 last:border-0 truncate">
+                              <span className="text-white truncate">{item.email}</span>
+                              <span className="text-gray-600 text-[7px] shrink-0">{item.timestamp.split(',')[1] || item.timestamp}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {accessToken && targetId ? (
+                          <button
+                            type="button"
+                            onClick={handleSyncOfflineQueue}
+                            className="w-full flex items-center justify-center gap-1.5 py-1 px-2 border border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500 text-emerald-400 font-mono text-[9px] font-bold uppercase rounded cursor-pointer transition-all"
+                          >
+                            Sync Entire Queue to Google {workspaceType === 'sheets' ? 'Sheet' : 'Doc'}
+                          </button>
+                        ) : (
+                          <p className="text-[8.5px] font-mono text-yellow-500/80 bg-yellow-500/10 p-1.5 rounded border border-yellow-500/20 leading-relaxed font-bold">
+                            💡 Connect your Google account & target Leads Sheet above to sync these local logs now!
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Sync Logs */}
+                    {syncedLogs.length > 0 && (
+                      <div className="pt-2 border-t border-gray-900 space-y-1.5">
+                        <span className="text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest block">
+                          Recent Sync Activity ({syncedLogs.length})
+                        </span>
+                        <div className="max-h-20 overflow-y-auto bg-gray-900/50 border border-gray-900 rounded p-1.5 text-[8px] font-mono text-gray-500 space-y-1">
+                          {syncedLogs.map((log, lIdx) => (
+                            <div key={lIdx} className="flex justify-between border-b border-gray-900 pb-0.5 last:border-0">
+                              <span className="text-gray-300 truncate">{log.email}</span>
+                              <span className="text-emerald-500 text-[7px] shrink-0 font-bold uppercase">✓ SYNCED</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
-
-                  {/* Step 2: GDoc/GSheet ID or Creation */}
-                  {accessToken && (
-                    <div className="space-y-2 pt-2 border-t border-gray-900">
-                      <div className="text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest flex justify-between">
-                        <span>Target {workspaceType === 'sheets' ? 'Spreadsheet' : 'Document'}</span>
-                        <span className="text-gray-500">Google {workspaceType === 'sheets' ? 'Sheets' : 'Docs'} Workspace</span>
-                      </div>
-
-                      {targetId ? (
-                        <div className="p-2 rounded bg-gray-900 border border-gray-800 space-y-1.5 text-[10px]">
-                          <div className="flex justify-between items-center">
-                            <span className="font-semibold text-gray-300 truncate font-mono">
-                              ✓ {targetTitle}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setTargetId('');
-                                setTargetTitle('');
-                                setTargetUrl('');
-                                setExistingUrlInput('');
-                                localStorage.removeItem('sou_workspace_target_id');
-                                localStorage.removeItem('sou_workspace_target_title');
-                                localStorage.removeItem('sou_workspace_target_url');
-                                localStorage.removeItem('sou_google_doc_id');
-                                localStorage.removeItem('sou_google_doc_title');
-                                localStorage.removeItem('sou_google_doc_url');
-                              }}
-                              className="text-[8.5px] font-mono text-red-400 hover:text-red-300 uppercase cursor-pointer font-bold"
-                            >
-                              Disconnect
-                            </button>
-                          </div>
-                          <p className="text-[9px] text-gray-500 truncate font-mono">ID: {targetId}</p>
-                          <a
-                            href={targetUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 hover:underline font-mono text-[9px] font-bold uppercase transition"
-                          >
-                            Open Live {workspaceType === 'sheets' ? 'Google Sheet' : 'Google Doc'} <ExternalLink className="w-2.5 h-2.5" />
-                          </a>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <button
-                            type="button"
-                            onClick={handleCreateNewDoc}
-                            disabled={isDocCreating}
-                            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded bg-validation-orange hover:bg-validation-orange/95 text-gray-950 font-mono text-[10.5px] font-bold uppercase cursor-pointer disabled:opacity-50"
-                          >
-                            {isDocCreating ? (
-                              <span>Creating {workspaceType === 'sheets' ? 'Spreadsheet' : 'Document'}...</span>
-                            ) : (
-                              <>
-                                <Plus className="w-3.5 h-3.5 shrink-0" />
-                                <span>Create New Leads {workspaceType === 'sheets' ? 'Sheet' : 'Doc'}</span>
-                              </>
-                            )}
-                          </button>
-
-                          <div className="pt-1.5 space-y-1">
-                            <label className="block text-[8px] font-mono text-gray-500 uppercase font-bold">
-                              Or connect existing {workspaceType === 'sheets' ? 'Spreadsheet' : 'Document'} (ID or URL)
-                            </label>
-                            <input
-                              type="text"
-                              value={existingUrlInput}
-                              onChange={(e) => handleLinkExistingUrl(e.target.value)}
-                              placeholder={workspaceType === 'sheets' ? "https://docs.google.com/spreadsheets/d/..." : "https://docs.google.com/document/d/..."}
-                              className="w-full bg-gray-900 border border-gray-800 rounded px-2 py-1 text-[9.5px] text-white placeholder-gray-600 focus:outline-none focus:border-validation-orange font-mono"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Offline visitor booking Queue */}
-                  {offlineQueue.length > 0 && (
-                    <div className="pt-2 border-t border-gray-900 space-y-2">
-                      <div className="flex justify-between items-center text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest">
-                        <span>Offline Buffer Queue ({offlineQueue.length})</span>
-                        <span className="text-yellow-500 font-bold">Unsynced Live Logs</span>
-                      </div>
-                      
-                      <div className="max-h-20 overflow-y-auto bg-gray-900 border border-gray-800 rounded p-1.5 text-[8.5px] font-mono text-gray-400 space-y-1">
-                        {offlineQueue.map((item, qIdx) => (
-                          <div key={qIdx} className="flex justify-between border-b border-gray-950 pb-0.5 last:border-0 truncate">
-                            <span className="text-white truncate">{item.email}</span>
-                            <span className="text-gray-600 text-[7px] shrink-0">{item.timestamp.split(',')[1] || item.timestamp}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {accessToken && targetId ? (
-                        <button
-                          type="button"
-                          onClick={handleSyncOfflineQueue}
-                          className="w-full flex items-center justify-center gap-1.5 py-1 px-2 border border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500 text-emerald-400 font-mono text-[9px] font-bold uppercase rounded cursor-pointer transition-all"
-                        >
-                          Sync Entire Queue to Google {workspaceType === 'sheets' ? 'Sheet' : 'Doc'}
-                        </button>
-                      ) : (
-                        <p className="text-[8.5px] font-mono text-yellow-500/80 bg-yellow-500/10 p-1.5 rounded border border-yellow-500/20 leading-relaxed font-bold">
-                          💡 Connect your Google account & target Leads Sheet above to sync these local logs now!
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Sync Logs */}
-                  {syncedLogs.length > 0 && (
-                    <div className="pt-2 border-t border-gray-900 space-y-1.5">
-                      <span className="text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest block">
-                        Recent Sync Activity ({syncedLogs.length})
-                      </span>
-                      <div className="max-h-20 overflow-y-auto bg-gray-900/50 border border-gray-900 rounded p-1.5 text-[8px] font-mono text-gray-500 space-y-1">
-                        {syncedLogs.map((log, lIdx) => (
-                          <div key={lIdx} className="flex justify-between border-b border-gray-900 pb-0.5 last:border-0">
-                            <span className="text-gray-300 truncate">{log.email}</span>
-                            <span className="text-emerald-500 text-[7px] shrink-0 font-bold uppercase">✓ SYNCED</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Contact credentials, Mock QR code placeholder (right) */}
-        <div className="lg:col-span-6 bg-[#1F2937]/50 border border-gray-800 p-6 rounded-xl flex flex-col justify-between min-h-[300px]">
+        <div className="lg:col-span-6 bg-[#1F2937]/50 border border-gray-800 p-6 rounded-xl flex flex-col justify-between min-h-[350px]">
           <div>
-            <div className="border-b border-gray-800 pb-2.5 mb-4">
-              <span className="font-mono text-xs text-gray-400 uppercase tracking-widest">
-                CORPORATE CONTACT DIRECTORY
+            <div className="border-b border-gray-800 pb-2.5 mb-4 flex justify-between items-center">
+              <span className="font-mono text-xs text-gray-400 uppercase tracking-widest font-bold">
+                {emailPreviewTab === 'directory' ? 'CORPORATE CONTACT DIRECTORY' : 'AUTOMATED EMAIL TEMPLATE PREVIEW'}
               </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Left Contact Fields */}
-              <div className="space-y-3 font-mono text-xs text-gray-300">
-                <div>
-                  <span className="text-gray-500 text-[8px] block uppercase">DEVELOPMENT EMAIL</span>
-                  <span className="text-white hover:text-emerald-300 transition-colors">partner@soupro.com</span>
-                </div>
-                <div>
-                  <span className="text-gray-500 text-[8px] block uppercase">AFFILIATE NETWORK</span>
-                  <span className="text-white hover:text-emerald-300 transition-colors">affiliates.souarchitect.com</span>
-                </div>
-                <div>
-                  <span className="text-gray-500 text-[8px] block uppercase">OFFICIAL PRESENCE</span>
-                  <span className="text-white">Soupro Digital Services, Inc.</span>
-                </div>
-              </div>
-
-              {/* Right Abstract QR Code representation */}
-              <div className="border border-gray-800 bg-gray-950 p-4 rounded-lg flex flex-col items-center justify-center text-center space-y-2 select-none">
-                <span className="font-mono text-[8px] text-gray-500 uppercase tracking-wider block">LAUNCH DEMO CHANNEL</span>
-                <div className="grid grid-cols-5 gap-0.5 w-16 h-16 bg-gray-950 border border-emerald-500/30 p-1">
-                  {[...Array(25)].map((_, i) => (
-                    <div
-                      key={i}
-                      className={`w-full h-full rounded-[1px] ${
-                        (i % 3 === 0 || i % 7 === 0 || i === 0 || i === 4 || i === 20 || i === 24)
-                          ? 'bg-emerald-400'
-                          : 'bg-transparent'
-                      }`}
-                    ></div>
-                  ))}
-                </div>
-                <div className="flex flex-col items-center space-y-1">
-                  <span className="text-[9px] font-mono text-emerald-400">QR-CODE APPROVED</span>
-                  <button
-                    type="button"
-                    onClick={handleDownloadQR}
-                    className="mt-1 flex items-center justify-center gap-1.5 px-2.5 py-1 rounded bg-[#1F2937] hover:bg-emerald-500 hover:text-gray-950 border border-gray-700 hover:border-emerald-500 transition-all text-[9.5px] font-mono text-gray-300 cursor-pointer uppercase tracking-wider"
-                  >
-                    <span>Download QR</span>
-                  </button>
-                </div>
+              <div className="flex gap-1.5 p-0.5 bg-gray-950 border border-gray-800 rounded text-[9px] font-mono">
+                <button
+                  type="button"
+                  onClick={() => setEmailPreviewTab('directory')}
+                  className={`px-2 py-1 rounded transition-all font-bold cursor-pointer ${
+                    emailPreviewTab === 'directory'
+                      ? 'bg-[#10B981] text-gray-950 font-extrabold'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  INFO & QR
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEmailPreviewTab('email')}
+                  className={`px-2 py-1 rounded transition-all font-bold cursor-pointer ${
+                    emailPreviewTab === 'email'
+                      ? 'bg-[#10B981] text-gray-950 font-extrabold'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  EMAIL PREVIEW
+                </button>
               </div>
             </div>
+
+            {emailPreviewTab === 'directory' ? (
+              <div className="grid grid-cols-2 gap-4">
+                {/* Left Contact Fields */}
+                <div className="space-y-3 font-mono text-xs text-gray-300">
+                  <div>
+                    <span className="text-gray-500 text-[8px] block uppercase">DEVELOPMENT EMAIL</span>
+                    <span className="text-white hover:text-emerald-300 transition-colors">partner@soupro.com</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-[8px] block uppercase">AFFILIATE NETWORK</span>
+                    <span className="text-white hover:text-emerald-300 transition-colors">affiliates.souarchitect.com</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-[8px] block uppercase">OFFICIAL PRESENCE</span>
+                    <span className="text-white">Soupro Digital Services, Inc.</span>
+                  </div>
+                </div>
+
+                {/* Right Abstract QR Code representation */}
+                <div className="border border-gray-800 bg-gray-950 p-4 rounded-lg flex flex-col items-center justify-center text-center space-y-2 select-none">
+                  <span className="font-mono text-[8px] text-gray-400 uppercase tracking-wider block">LAUNCH DEMO CHANNEL</span>
+                  <div className="grid grid-cols-5 gap-0.5 w-16 h-16 bg-gray-950 border border-emerald-500/30 p-1">
+                    {[...Array(25)].map((_, i) => (
+                      <div
+                        key={i}
+                        className={`w-full h-full rounded-[1px] ${
+                          (i % 3 === 0 || i % 7 === 0 || i === 0 || i === 4 || i === 20 || i === 24)
+                            ? 'bg-emerald-400'
+                            : 'bg-transparent'
+                        }`}
+                      ></div>
+                    ))}
+                  </div>
+                  <div className="flex flex-col items-center space-y-1">
+                    <span className="text-[9px] font-mono text-emerald-400">QR-CODE APPROVED</span>
+                    <button
+                      type="button"
+                      onClick={handleDownloadQR}
+                      className="mt-1 flex items-center justify-center gap-1.5 px-2.5 py-1 rounded bg-[#1F2937] hover:bg-emerald-500 hover:text-gray-950 border border-gray-700 hover:border-emerald-500 transition-all text-[9.5px] font-mono text-gray-300 cursor-pointer uppercase tracking-wider"
+                    >
+                      <span>Download QR</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-950 border border-gray-800 rounded-lg p-3 space-y-3">
+                {/* Email Envelope Header */}
+                <div className="border-b border-gray-800 pb-2 space-y-1 text-[10px] font-mono text-gray-400">
+                  <div className="flex justify-between">
+                    <span><strong className="text-gray-500">From:</strong> "Soupro Digital Services" &lt;{accessToken ? 'your-authenticated-account' : 'me'}&gt;</span>
+                    <span className="text-emerald-500 font-bold uppercase text-[8px] border border-emerald-500/20 px-1.5 py-0.5 bg-emerald-500/10 rounded">GMAIL OUTCOMING</span>
+                  </div>
+                  <div>
+                    <span><strong className="text-gray-500">To:</strong> {demoEmail || 'user@example.com'}</span>
+                  </div>
+                  <div>
+                    <span><strong className="text-gray-500">Subject:</strong> Booking Confirmed: Live Orientation Session</span>
+                  </div>
+                </div>
+
+                {/* Email Body Preview rendered inside a clean styling container */}
+                <div className="bg-white rounded-lg p-4 font-sans text-xs text-gray-800 shadow-inner max-h-[220px] overflow-y-auto leading-relaxed">
+                  <div className="text-center mb-4 pb-3 border-b border-gray-100">
+                    <h2 className="text-[#059669] font-extrabold text-base m-0">Orientation Slot Confirmed</h2>
+                    <p className="text-gray-500 m-1 text-[10px]">Thank you for reserving your seat!</p>
+                  </div>
+                  
+                  <p className="mb-3">Hello,</p>
+                  <p className="mb-4">Your live demonstration and orientation session has been scheduled successfully. Here are the booking records registered for your session:</p>
+                  
+                  <div className="bg-[#f8fafc] p-3 rounded border border-[#f1f5f9] mb-4 text-[11px]">
+                    <h4 className="m-0 mb-2 text-gray-600 uppercase font-bold text-[9px] tracking-wide">Reservation Details:</h4>
+                    <table className="w-full">
+                      <tbody>
+                        <tr>
+                          <td className="py-0.5 text-gray-500 w-24">Event Type:</td>
+                          <td className="py-0.5 text-gray-900 font-semibold text-right">Live Orientation & Onboarding Demo</td>
+                        </tr>
+                        <tr>
+                          <td className="py-0.5 text-gray-500">Your Email:</td>
+                          <td className="py-0.5 text-emerald-600 font-semibold text-right truncate max-w-[150px]">{demoEmail || 'user@example.com'}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-0.5 text-gray-500">Lead Tracker:</td>
+                          <td className="py-0.5 text-gray-900 font-semibold text-right truncate max-w-[150px]">{targetTitle || 'Leads Sheet (Local)'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  <p className="mb-4">The interactive link to join your live demonstration slot, along with reference guides and next steps, will be provided by your organizer shortly.</p>
+                  
+                  <hr className="border-t border-gray-100 my-3" />
+                  <p className="text-[9px] text-gray-400 text-center m-0 leading-normal">
+                    This is an automated operational system message sent securely using your connected Workspace service integration.
+                  </p>
+                </div>
+                
+                <p className="text-[9px] font-mono text-gray-400 text-center">
+                  💡 This template dynamically binds to the user's booking email and your leads directory in real time!
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="pt-4 border-t border-gray-800 flex justify-between items-center text-[10px] font-mono text-gray-400">
