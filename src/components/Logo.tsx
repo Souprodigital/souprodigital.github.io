@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import logoImg from '../../logo.png';
 
 interface LogoProps {
   className?: string; // Additional classes for custom style
@@ -15,8 +16,8 @@ export function Logo({
 }: LogoProps) {
   const [imgFailed, setImgFailed] = useState(false);
 
-  // Attempt to load "/logo.png". If a user uploads their logo to either /public/logo.png
-  // or /public/logo.svg, it will load correctly here.
+  // Attempt to load the imported logoImg, which Vite resolves as a relative URL.
+  // This supports subpath deployment environments like GitHub Pages.
   return (
     <div
       className={`relative rounded flex items-center justify-center overflow-hidden shrink-0 select-none ${sizeClass} ${
@@ -25,7 +26,7 @@ export function Logo({
     >
       {!imgFailed ? (
         <img
-          src="/logo.png"
+          src={logoImg}
           alt="Soupro Logo"
           className="w-full h-full object-contain pointer-events-none"
           onError={() => setImgFailed(true)}
