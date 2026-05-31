@@ -11,7 +11,7 @@ interface LogoProps {
 export function Logo({
   className = '',
   fallbackBgClass = 'bg-validation-orange',
-  sizeClass = 'w-8 h-8',
+  sizeClass = 'w-12 h-12',
   logoText = 'S'
 }: LogoProps) {
   const [imgFailed, setImgFailed] = useState(false);
@@ -33,7 +33,7 @@ export function Logo({
           referrerPolicy="no-referrer"
         />
       ) : (
-        <span className="font-bold text-gray-900 text-base font-sans tracking-tight">
+        <span className="font-extrabold text-gray-900 text-xl font-sans tracking-tight">
           {logoText}
         </span>
       )}
