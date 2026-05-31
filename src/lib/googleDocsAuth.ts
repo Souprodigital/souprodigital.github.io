@@ -16,7 +16,8 @@ import firebaseConfig from '../../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-export const db = getFirestore(app);
+const databaseId = (firebaseConfig as any).firestoreDatabaseId || '(default)';
+export const db = getFirestore(app, databaseId);
 
 const provider = new GoogleAuthProvider();
 provider.addScope('https://www.googleapis.com/auth/spreadsheets');
