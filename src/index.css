@@ -68,13 +68,13 @@
 @media (max-width: 1024px) {
   .presentation-ratio-box {
     aspect-ratio: auto;
-    min-height: 600px;
+    min-height: auto;
   }
 }
 
 @media (max-width: 640px) {
   .presentation-ratio-box {
     aspect-ratio: auto;
-    min-height: 680px;
+    min-height: auto;
   }
 }

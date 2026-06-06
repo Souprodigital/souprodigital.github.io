@@ -4,7 +4,7 @@ import { Sparkles, ArrowRight, Shield, Zap, Target, BarChart3, Globe } from 'luc
 
 export function HeroSection({ onAction }: { onAction?: () => void }) {
   return (
-    <div className="relative w-full min-h-full flex flex-col items-center justify-center p-4 md:p-8 lg:p-12 bg-titanium-midnight overflow-y-auto lg:overflow-hidden font-display">
+    <div className="relative w-full min-h-full flex flex-col items-center justify-center p-4 md:p-8 lg:p-12 bg-titanium-midnight overflow-y-auto font-display">
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 modern-grid opacity-20 pointer-events-none" />
       <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
@@ -34,8 +34,8 @@ export function HeroSection({ onAction }: { onAction?: () => void }) {
             <h2 className="text-gray-400 font-bold text-xs md:text-sm tracking-[0.3em] uppercase">
               The Future Of
             </h2>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight text-white leading-[1.1] lg:leading-[0.95]">
-              DIGITAL BOOK <br />
+            <h1 className="text-2xl sm:text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight text-white leading-[1.2] sm:leading-[1.1] lg:leading-[0.95] break-words">
+              DIGITAL BOOK <br className="hidden sm:block" />
               <span className="text-white">PUBLISHING</span>
             </h1>
           </motion.div>
@@ -157,9 +157,9 @@ export function HeroSection({ onAction }: { onAction?: () => void }) {
       </div>
 
       {/* Corporate Badges Rail */}
-      <div className="absolute bottom-8 w-full border-t border-gray-900/50 pt-8 flex justify-center gap-12 opacity-40">
+      <div className="w-full border-t border-gray-900/50 mt-12 py-8 flex flex-wrap justify-center gap-6 md:gap-12 opacity-40">
          {['SOUARCHITECT PRO', 'DIGITAL SOUPRO', 'V1.4 ENGINE', 'SWISS MODERNIST'].map(text => (
-           <span key={text} className="text-[9px] font-mono text-gray-500 font-bold tracking-[0.3em] uppercase">{text}</span>
+           <span key={text} className="text-[8px] md:text-[9px] font-mono text-gray-500 font-bold tracking-[0.2em] md:tracking-[0.3em] uppercase">{text}</span>
          ))}
       </div>
     </div>

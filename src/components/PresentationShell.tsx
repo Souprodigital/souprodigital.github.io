@@ -637,7 +637,7 @@ export function PresentationShell({}: PresentationShellProps) {
               {/* Scalable Aspect-Ratio Frame Container */}
               <div
                 id="active-slide-frame"
-                className="presentation-ratio-box w-full bg-titanium-midnight border-[1.5px] border-slate-border rounded-xl overflow-hidden shadow-2xl relative"
+                className="presentation-ratio-box w-full bg-titanium-midnight border-[1.5px] border-slate-border rounded-xl overflow-y-auto shadow-2xl relative"
               >
                 {/* Print High Contrast Overlay filter */}
                 <div className={`w-full h-full ${themeMode === 'high-contrast-light' ? 'filter invert brightness-110 contrast-125' : ''}`}>
