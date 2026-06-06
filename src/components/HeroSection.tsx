@@ -4,23 +4,23 @@ import { Sparkles, ArrowRight, Shield, Zap, Target, BarChart3, Globe } from 'luc
 
 export function HeroSection({ onAction }: { onAction?: () => void }) {
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center p-8 bg-titanium-midnight overflow-hidden font-display">
+    <div className="relative w-full min-h-full flex flex-col items-center justify-center p-4 md:p-8 lg:p-12 bg-titanium-midnight overflow-y-auto lg:overflow-hidden font-display">
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 modern-grid opacity-20 pointer-events-none" />
       <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse" style={{ animationDelay: '2s' }} />
 
-      <div className="z-10 w-full max-w-5xl mx-auto flex flex-col lg:flex-row items-center gap-12">
+      <div className="z-10 w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-10 lg:gap-16 py-12 lg:py-0">
         {/* Left Content Column */}
-        <div className="flex-1 text-left space-y-8">
+        <div className="flex-1 text-left space-y-6 md:space-y-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full"
           >
-            <Sparkles className="w-4 h-4 text-emerald-400" />
-            <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-[0.2em]">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-[9px] md:text-[10px] font-mono text-emerald-400 font-bold uppercase tracking-[0.2em]">
               The Final Word in Publishing
             </span>
           </motion.div>
@@ -29,12 +29,12 @@ export function HeroSection({ onAction }: { onAction?: () => void }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="space-y-4"
+            className="space-y-3 md:space-y-4"
           >
-            <h2 className="text-gray-400 font-bold text-sm tracking-[0.3em] uppercase">
+            <h2 className="text-gray-400 font-bold text-xs md:text-sm tracking-[0.3em] uppercase">
               The Future Of
             </h2>
-            <h1 className="text-6xl md:text-8xl font-bold tracking-tight text-white leading-[0.95]">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl xl:text-8xl font-bold tracking-tight text-white leading-[1.1] lg:leading-[0.95]">
               DIGITAL BOOK <br />
               <span className="text-white">PUBLISHING</span>
             </h1>
@@ -44,12 +44,12 @@ export function HeroSection({ onAction }: { onAction?: () => void }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex flex-wrap gap-x-6 gap-y-2"
+            className="flex flex-wrap gap-x-4 md:gap-x-6 gap-y-2"
           >
             {['VALIDATE', 'CREATE', 'MONETIZE', 'SECURE'].map((word, i) => (
-              <span key={word} className="text-emerald-400 font-bold text-sm tracking-[0.15em] flex items-center gap-2">
+              <span key={word} className="text-emerald-400 font-bold text-[10px] md:text-sm tracking-[0.15em] flex items-center gap-2">
                 {word}
-                {i < 3 && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/30" />}
+                {i < 3 && <span className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-emerald-400/30" />}
               </span>
             ))}
           </motion.div>
@@ -58,7 +58,7 @@ export function HeroSection({ onAction }: { onAction?: () => void }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-lg text-gray-400 leading-relaxed max-w-xl font-sans"
+            className="text-base md:text-lg text-gray-400 leading-relaxed max-w-xl font-sans"
           >
             SouArchitect is the all-in-one AI publishing platform that helps creators validate ideas, craft exceptional books, build high-converting pages, and securely deliver digital products—effortlessly.
           </motion.p>
@@ -67,17 +67,17 @@ export function HeroSection({ onAction }: { onAction?: () => void }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex gap-4 pt-4"
+            className="flex flex-col sm:flex-row gap-4 pt-2 md:pt-4"
           >
             <button 
               onClick={onAction}
-              className="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-sm uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group flex items-center gap-2"
+              className="px-6 md:px-8 py-3 md:py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs md:text-sm uppercase tracking-widest transition-all hover:scale-105 active:scale-95 group flex items-center justify-center gap-2"
             >
               Start Your Journey <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
             <button 
               onClick={onAction}
-              className="px-8 py-4 bg-transparent border border-gray-700 hover:border-gray-500 text-white font-bold text-sm uppercase tracking-widest transition-all"
+              className="px-6 md:px-8 py-3 md:py-4 bg-transparent border border-gray-700 hover:border-gray-500 text-white font-bold text-xs md:text-sm uppercase tracking-widest transition-all text-center"
             >
               Watch Demo
             </button>
@@ -89,7 +89,7 @@ export function HeroSection({ onAction }: { onAction?: () => void }) {
           initial={{ opacity: 0, scale: 0.9, x: 20 }}
           animate={{ opacity: 1, scale: 1, x: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="flex-1 w-full relative"
+          className="flex-1 w-full max-w-lg lg:max-w-none relative"
         >
           <div className="relative aspect-[4/3] rounded-2xl border border-gray-800 bg-gray-900/40 p-4 shadow-2xl overflow-hidden group">
              {/* Scanline effect */}
