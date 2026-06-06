@@ -715,7 +715,7 @@ export function PresentationShell({}: PresentationShellProps) {
                   </div>
 
                   {/* Scalable Aspect-Ratio Frame Container */}
-                  <div className="presentation-ratio-box w-full bg-titanium-midnight border-[1.5px] border-slate-border rounded-xl sandbox-frame overflow-hidden shadow-xl">
+                  <div className="w-full bg-titanium-midnight border-[1.5px] border-slate-border rounded-xl sandbox-frame overflow-y-auto shadow-xl min-h-[500px] h-auto">
                     <div className={`w-full h-full ${themeMode === 'high-contrast-light' ? 'filter invert brightness-110 contrast-125' : ''}`}>
                       {renderSlideComponent(idx)}
                     </div>

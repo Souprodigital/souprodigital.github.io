@@ -4,13 +4,13 @@ import { Sparkles, ArrowRight, Shield, Zap, Target, BarChart3, Globe } from 'luc
 
 export function HeroSection({ onAction }: { onAction?: () => void }) {
   return (
-    <div className="relative w-full min-h-full flex flex-col items-center justify-center p-4 md:p-8 lg:p-12 bg-titanium-midnight overflow-y-auto font-display">
+    <div className="relative w-full min-h-full flex flex-col items-center justify-start p-4 md:p-8 lg:p-12 bg-titanium-midnight overflow-y-auto font-display">
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 modern-grid opacity-20 pointer-events-none" />
       <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse" style={{ animationDelay: '2s' }} />
 
-      <div className="z-10 w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-10 lg:gap-16 py-12 lg:py-0">
+      <div className="z-10 w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-10 lg:gap-16 py-12 md:py-20 lg:py-24">
         {/* Left Content Column */}
         <div className="flex-1 text-left space-y-6 md:space-y-8">
           <motion.div
