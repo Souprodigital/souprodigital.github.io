@@ -67,11 +67,105 @@ import {
   KPIOverview
 } from '../types';
 
-import { HeroSection } from './HeroSection';
-
 // Page 1 — Cover
-export function CoverPage({ onAction }: { onAction?: () => void }) {
-  return <HeroSection onAction={onAction} />;
+interface CoverPageProps {
+  onStartJourney?: () => void;
+}
+
+export function CoverPage({ onStartJourney }: CoverPageProps) {
+  return (
+    <div className="relative w-full min-h-full lg:h-full flex flex-col justify-between p-5 sm:p-6 md:p-8 lg:p-8 overflow-y-auto bg-[#111827]">
+      {/* Structural backgrounds */}
+      <div className="absolute inset-0 modern-grid pointer-events-none opacity-40"></div>
+      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+      {/* Header */}
+      <div className="flex justify-between items-center z-10 border-b border-gray-800 pb-6">
+        <div className="flex items-center space-x-3">
+          <Logo fallbackBgClass="bg-gradient-to-br from-emerald-500 to-teal-400" logoText="S" />
+          <div>
+            <span className="font-sans font-extrabold tracking-tight text-white text-lg">SouArchitect</span>
+            <span className="text-xs text-gray-400 block font-mono -mt-1">by Soupro Digital Services</span>
+          </div>
+        </div>
+        <div className="flex items-center space-x-4 font-mono text-xs text-gray-400">
+          <span className="px-2.5 py-1 rounded bg-gray-800 tracking-wider">INVESTOR DECK - V1.4</span>
+        </div>
+      </div>
+
+      {/* Main Content Info */}
+      <div className="my-auto py-8 z-10 max-w-4xl">
+        <div className="inline-flex items-center space-x-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full mb-6">
+          <Sparkles className="w-4 h-4 text-emerald-400" />
+          <span className="text-xs font-mono text-emerald-400 font-semibold uppercase tracking-wider">Aesthetic Swiss Modernist Publishing</span>
+        </div>
+
+        <h1 className="text-5xl lg:text-7xl font-sans font-extrabold tracking-tighter text-white leading-[1.1] mb-6">
+          The Validation-First <br/>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-blue-400">
+            AI Publishing Platform
+          </span>
+        </h1>
+
+        <p className="text-base lg:text-lg text-gray-300 font-sans leading-relaxed tracking-wide max-w-2xl mb-8">
+          Validate high-value educational ideas first, synthesize book assets into premium custom framework manuscripts, construct conversions-oriented sales channels and secure intellectual rights instantly.
+        </p>
+
+        <button
+          onClick={onStartJourney}
+          className="mb-8 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-sans font-extrabold text-sm uppercase tracking-widest rounded-lg flex items-center gap-3 transition-all cursor-pointer active:scale-[0.98] shadow-lg shadow-emerald-500/20 group"
+        >
+          <span>Start Your Journey</span>
+          <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+        </button>
+
+        {/* Dynamic Badges */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
+          <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-lg">
+            <span className="font-mono text-xs text-emerald-400 block mb-1">01. RESEARCH</span>
+            <span className="font-sans font-semibold text-white">Idea & Market Validation</span>
+          </div>
+          <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-lg">
+            <span className="font-mono text-xs text-emerald-400 block mb-1">02. SYNTHESIZE</span>
+            <span className="font-sans font-semibold text-white">10+ Chapter Blueprints</span>
+          </div>
+          <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-lg">
+            <span className="font-mono text-xs text-emerald-400 block mb-1">03. PUBLISH</span>
+            <span className="font-sans font-semibold text-white">Live WYSIWYG Sales Pages</span>
+          </div>
+          <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-lg">
+            <span className="font-mono text-xs text-emerald-400 block mb-1">04. MONETIZE</span>
+            <span className="font-sans font-semibold text-white">Secure Whop Distribution</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Info */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-6 border-t border-gray-800 z-10 gap-4 sm:gap-0">
+        <div className="flex flex-wrap items-center gap-6 font-mono text-xs text-gray-400">
+          <div>
+            <span className="text-gray-500 block">WEBSITE</span>
+            <span className="text-white">www.souarchitect.com</span>
+          </div>
+          <div>
+            <span className="text-gray-500 block">PARENT CORP</span>
+            <span className="text-white">Soupro Digital Services</span>
+          </div>
+          <div>
+            <span className="text-gray-500 block">PLATFORM ACCESS</span>
+            <span className="text-emerald-400 flex items-center gap-1">
+              Active Integration <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+            </span>
+          </div>
+        </div>
+        <div className="text-right">
+          <span className="font-mono text-xs text-gray-500 block">PRIMARY ENTRANCE</span>
+          <span className="font-sans font-semibold text-white text-sm">Scan / Click To Enter Presentation</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // Page 2 — Executive Overview

@@ -177,19 +177,13 @@ export function PresentationShell({}: PresentationShellProps) {
 
   const totalSlides = 14;
 
-  const handleTakeToWalkthrough = () => {
+  const handleStartJourney = () => {
     if (viewMode === 'presentation') {
-      setActiveSlideIdx(13); // ContactPage is the last slide
+      setActiveSlideIdx(13); // Index of ContactPage
     } else {
       const element = document.getElementById('booking-form-wrapper');
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } else {
-        // Fallback for document mode if element not immediately found (might happen if rendering takes time)
-        setActiveSlideIdx(13);
-        setTimeout(() => {
-          document.getElementById('booking-form-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 100);
+        element.scrollIntoView({ behavior: 'smooth' });
       }
     }
   };
@@ -214,7 +208,7 @@ export function PresentationShell({}: PresentationShellProps) {
   // Helper renderer matching slide indices to Slide Components
   const renderSlideComponent = (idx: number) => {
     switch (idx) {
-      case 0: return <CoverPage onAction={handleTakeToWalkthrough} />;
+      case 0: return <CoverPage onStartJourney={handleStartJourney} />;
       case 1: return <ExecutiveOverviewPage />;
       case 2: return <ProblemPage />;
       case 3: return <SolutionPage />;
@@ -228,7 +222,7 @@ export function PresentationShell({}: PresentationShellProps) {
       case 11: return <IdealUsersPage />;
       case 12: return <CompanyStoryPage />;
       case 13: return <ContactPage />;
-      default: return <CoverPage onAction={handleTakeToWalkthrough} />;
+      default: return <CoverPage />;
     }
   };
 
@@ -637,7 +631,7 @@ export function PresentationShell({}: PresentationShellProps) {
               {/* Scalable Aspect-Ratio Frame Container */}
               <div
                 id="active-slide-frame"
-                className="presentation-ratio-box w-full bg-titanium-midnight border-[1.5px] border-slate-border rounded-xl overflow-y-auto shadow-2xl relative"
+                className="presentation-ratio-box w-full bg-titanium-midnight border-[1.5px] border-slate-border rounded-xl overflow-hidden shadow-2xl relative"
               >
                 {/* Print High Contrast Overlay filter */}
                 <div className={`w-full h-full ${themeMode === 'high-contrast-light' ? 'filter invert brightness-110 contrast-125' : ''}`}>
@@ -715,7 +709,7 @@ export function PresentationShell({}: PresentationShellProps) {
                   </div>
 
                   {/* Scalable Aspect-Ratio Frame Container */}
-                  <div className="w-full bg-titanium-midnight border-[1.5px] border-slate-border rounded-xl sandbox-frame overflow-y-auto shadow-xl min-h-[500px] h-auto">
+                  <div className="presentation-ratio-box w-full bg-titanium-midnight border-[1.5px] border-slate-border rounded-xl sandbox-frame overflow-hidden shadow-xl">
                     <div className={`w-full h-full ${themeMode === 'high-contrast-light' ? 'filter invert brightness-110 contrast-125' : ''}`}>
                       {renderSlideComponent(idx)}
                     </div>
