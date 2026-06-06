@@ -177,6 +177,23 @@ export function PresentationShell({}: PresentationShellProps) {
 
   const totalSlides = 14;
 
+  const handleTakeToWalkthrough = () => {
+    if (viewMode === 'presentation') {
+      setActiveSlideIdx(13); // ContactPage is the last slide
+    } else {
+      const element = document.getElementById('booking-form-wrapper');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        // Fallback for document mode if element not immediately found (might happen if rendering takes time)
+        setActiveSlideIdx(13);
+        setTimeout(() => {
+          document.getElementById('booking-form-wrapper')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    }
+  };
+
   const slidesMetadata = [
     { num: '01', title: 'Cover Title Spec', category: 'BRAND' },
     { num: '02', title: 'Executive Overview', category: 'PRODUCT SUMMARY' },
@@ -197,7 +214,7 @@ export function PresentationShell({}: PresentationShellProps) {
   // Helper renderer matching slide indices to Slide Components
   const renderSlideComponent = (idx: number) => {
     switch (idx) {
-      case 0: return <CoverPage />;
+      case 0: return <CoverPage onAction={handleTakeToWalkthrough} />;
       case 1: return <ExecutiveOverviewPage />;
       case 2: return <ProblemPage />;
       case 3: return <SolutionPage />;
@@ -211,7 +228,7 @@ export function PresentationShell({}: PresentationShellProps) {
       case 11: return <IdealUsersPage />;
       case 12: return <CompanyStoryPage />;
       case 13: return <ContactPage />;
-      default: return <CoverPage />;
+      default: return <CoverPage onAction={handleTakeToWalkthrough} />;
     }
   };
 

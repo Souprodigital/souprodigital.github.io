@@ -67,93 +67,11 @@ import {
   KPIOverview
 } from '../types';
 
+import { HeroSection } from './HeroSection';
+
 // Page 1 — Cover
-export function CoverPage() {
-  return (
-    <div className="relative w-full min-h-full lg:h-full flex flex-col justify-between p-5 sm:p-6 md:p-8 lg:p-8 overflow-y-auto bg-[#111827]">
-      {/* Structural backgrounds */}
-      <div className="absolute inset-0 modern-grid pointer-events-none opacity-40"></div>
-      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none"></div>
-
-      {/* Header */}
-      <div className="flex justify-between items-center z-10 border-b border-gray-800 pb-6">
-        <div className="flex items-center space-x-3">
-          <Logo fallbackBgClass="bg-gradient-to-br from-emerald-500 to-teal-400" logoText="S" />
-          <div>
-            <span className="font-sans font-extrabold tracking-tight text-white text-lg">SouArchitect</span>
-            <span className="text-xs text-gray-400 block font-mono -mt-1">by Soupro Digital Services</span>
-          </div>
-        </div>
-        <div className="flex items-center space-x-4 font-mono text-xs text-gray-400">
-          <span className="px-2.5 py-1 rounded bg-gray-800 tracking-wider">INVESTOR DECK - V1.4</span>
-        </div>
-      </div>
-
-      {/* Main Content Info */}
-      <div className="my-auto py-8 z-10 max-w-4xl">
-        <div className="inline-flex items-center space-x-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full mb-6">
-          <Sparkles className="w-4 h-4 text-emerald-400" />
-          <span className="text-xs font-mono text-emerald-400 font-semibold uppercase tracking-wider">Aesthetic Swiss Modernist Publishing</span>
-        </div>
-
-        <h1 className="text-5xl lg:text-7xl font-sans font-extrabold tracking-tighter text-white leading-[1.1] mb-6">
-          The Validation-First <br/>
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-blue-400">
-            AI Publishing Platform
-          </span>
-        </h1>
-
-        <p className="text-base lg:text-lg text-gray-300 font-sans leading-relaxed tracking-wide max-w-2xl mb-8">
-          Validate high-value educational ideas first, synthesize book assets into premium custom framework manuscripts, construct conversions-oriented sales channels and secure intellectual rights instantly.
-        </p>
-
-        {/* Dynamic Badges */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
-          <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-lg">
-            <span className="font-mono text-xs text-emerald-400 block mb-1">01. RESEARCH</span>
-            <span className="font-sans font-semibold text-white">Idea & Market Validation</span>
-          </div>
-          <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-lg">
-            <span className="font-mono text-xs text-emerald-400 block mb-1">02. SYNTHESIZE</span>
-            <span className="font-sans font-semibold text-white">10+ Chapter Blueprints</span>
-          </div>
-          <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-lg">
-            <span className="font-mono text-xs text-emerald-400 block mb-1">03. PUBLISH</span>
-            <span className="font-sans font-semibold text-white">Live WYSIWYG Sales Pages</span>
-          </div>
-          <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-lg">
-            <span className="font-mono text-xs text-emerald-400 block mb-1">04. MONETIZE</span>
-            <span className="font-sans font-semibold text-white">Secure Whop Distribution</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer Info */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-6 border-t border-gray-800 z-10 gap-4 sm:gap-0">
-        <div className="flex flex-wrap items-center gap-6 font-mono text-xs text-gray-400">
-          <div>
-            <span className="text-gray-500 block">WEBSITE</span>
-            <span className="text-white">www.souarchitect.com</span>
-          </div>
-          <div>
-            <span className="text-gray-500 block">PARENT CORP</span>
-            <span className="text-white">Soupro Digital Services</span>
-          </div>
-          <div>
-            <span className="text-gray-500 block">PLATFORM ACCESS</span>
-            <span className="text-emerald-400 flex items-center gap-1">
-              Active Integration <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
-            </span>
-          </div>
-        </div>
-        <div className="text-right">
-          <span className="font-mono text-xs text-gray-500 block">PRIMARY ENTRANCE</span>
-          <span className="font-sans font-semibold text-white text-sm">Scan / Click To Enter Presentation</span>
-        </div>
-      </div>
-    </div>
-  );
+export function CoverPage({ onAction }: { onAction?: () => void }) {
+  return <HeroSection onAction={onAction} />;
 }
 
 // Page 2 — Executive Overview
@@ -1769,6 +1687,7 @@ export function ContactPage() {
   
   const [offlineQueue, setOfflineQueue] = useState<Array<{ email: string; timestamp: string }>>([]);
   const [syncedLogs, setSyncedLogs] = useState<Array<{ email: string; timestamp: string; status: string }>>([]);
+  const [unsyncedCount, setUnsyncedCount] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showAdminDetails, setShowAdminDetails] = useState<boolean>(false);
   const [emailPreviewTab, setEmailPreviewTab] = useState<'directory' | 'email'>('directory');
@@ -1787,6 +1706,15 @@ export function ContactPage() {
     window.location.hostname.includes('127.0.0.1') || 
     window.location.hostname.includes('-dev-')
   );
+
+  const handleAuthExpiry = () => {
+    setAccessToken(null);
+    setGoogleUser(null);
+    setConnectedEmail('');
+    localStorage.removeItem('sou_google_access_token');
+    localStorage.removeItem('sou_connected_email');
+    setErrorMsg('Google Workspace session expired. Please reconnect in the Admin Console below.');
+  };
 
   useEffect(() => {
     // 1. Recover offline queue
@@ -1851,9 +1779,10 @@ export function ContactPage() {
 
   // Synchronizes any unsynced leads from cloud database to connected Google Sheet or Doc
   const syncUnsyncedLeads = async (currentAccessToken = accessToken, currentTargetId = targetId, currentWorkspaceType = workspaceType, currentTargetTitle = targetTitle) => {
-    if (!currentAccessToken || !currentTargetId) return;
     try {
       const unsynced = await getUnsyncedLeadsFromCloud();
+      setUnsyncedCount(unsynced?.length || 0);
+      if (!currentAccessToken || !currentTargetId) return;
       if (!unsynced || unsynced.length === 0) return;
       
       console.log(`[Sync] Found ${unsynced.length} unsynced leads in cloud database. Starting push...`);
@@ -1872,6 +1801,7 @@ export function ContactPage() {
           }
           
           await markLeadAsSyncedInCloud(lead.id);
+          setUnsyncedCount(prev => Math.max(0, prev - 1));
           
           // Log success state locally
           setSyncedLogs(prev => {
@@ -1879,8 +1809,12 @@ export function ContactPage() {
             localStorage.setItem('sou_synced_logs', JSON.stringify(up));
             return up;
           });
-        } catch (leadSyncErr) {
+        } catch (leadSyncErr: any) {
           console.error(`Failed to sync lead ${lead.email}:`, leadSyncErr);
+          if (leadSyncErr.message === 'AUTH_EXPIRED') {
+            handleAuthExpiry();
+            return; // Stop processing all leads if auth is dead
+          }
         }
       }
     } catch (err) {
@@ -1919,7 +1853,7 @@ export function ContactPage() {
   };
 
   useEffect(() => {
-    if (accessToken && targetId) {
+    if (targetId) {
       syncUnsyncedLeads();
     }
   }, [accessToken, targetId]);
@@ -2111,9 +2045,16 @@ export function ContactPage() {
       }
       
       setIsBooked(true);
+      // Refresh unsynced count
+      getUnsyncedLeadsFromCloud().then(l => setUnsyncedCount(l?.length || 0)).catch(() => {});
     } catch (err: any) {
       console.error(err);
-      setErrorMsg(err.message || 'Direct synchronization offline. Saved securely in cloud/local backup queue.');
+      const isAuthError = err.message === 'AUTH_EXPIRED';
+      if (isAuthError) {
+        handleAuthExpiry();
+      }
+      
+      setErrorMsg(isAuthError ? 'Google Workspace connection expired. Lead saved to cloud backup.' : (err.message || 'Direct synchronization offline. Saved securely in cloud/local backup queue.'));
       
       // Store lead in Firestore as unsynced
       try {
@@ -2288,9 +2229,20 @@ export function ContactPage() {
                     SCHEDULE GUIDED SYSTEM WALKTHROUGH
                   </span>
                   {targetId && (
-                    <span className="inline-flex items-center gap-1 text-[8.5px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 font-bold uppercase">
-                      Live {workspaceType === 'sheets' ? 'Sheet' : 'Doc'} Sync Active
-                    </span>
+                    <div className="flex flex-col gap-1.5">
+                      <span className={`inline-flex items-center gap-1 text-[8.5px] font-mono px-1.5 py-0.5 rounded border font-bold uppercase ${
+                        accessToken 
+                          ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' 
+                          : 'text-amber-500 bg-amber-500/10 border-amber-500/20'
+                      }`}>
+                        {accessToken ? `Live ${workspaceType === 'sheets' ? 'Sheet' : 'Doc'} Sync Active` : `Cloud Sync Only (Disconnected)`}
+                      </span>
+                      {unsyncedCount > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[8.5px] font-mono text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20 font-bold uppercase animate-pulse">
+                          {unsyncedCount} PENDING GOOGLE SYNC
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div className="flex gap-2">
@@ -2477,9 +2429,16 @@ export function ContactPage() {
                     <div className="space-y-1.5">
                       <div className="flex justify-between items-center text-[9px] font-mono font-bold text-gray-400 uppercase tracking-widest">
                         <span>Owner Authorization</span>
-                        <span className={accessToken ? 'text-emerald-400 font-bold' : 'text-validation-orange font-bold'}>
-                          {accessToken ? 'Active Session' : 'Offline Mode'}
-                        </span>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className={accessToken ? 'text-emerald-400 font-bold' : 'text-validation-orange font-bold'}>
+                            {accessToken ? 'Active Session' : 'Offline Mode'}
+                          </span>
+                          {unsyncedCount > 0 && !accessToken && (
+                            <span className="text-blue-400 text-[8px] animate-pulse">
+                              {unsyncedCount} leads waiting for sync
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {!accessToken ? (

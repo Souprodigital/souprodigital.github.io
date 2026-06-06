@@ -136,8 +136,14 @@ export async function createGoogleSheet(
 
   if (!response.ok) {
     const errorBody = await response.text();
+    const isAuthError = response.status === 401 || errorBody.includes('UNAUTHENTICATED') || errorBody.includes('invalid authentication credentials');
+    if (isAuthError) {
+      cachedAccessToken = null;
+      if (typeof window !== 'undefined') localStorage.removeItem('sou_google_access_token');
+      throw new Error('AUTH_EXPIRED');
+    }
     console.error('Create Google Sheet error response:', errorBody);
-    throw new Error(`Failed to create Google Sheet: ${response.statusText}`);
+    throw new Error(`Failed to create Google Sheet: ${response.statusText || 'Internal API Error'}`);
   }
 
   const data = await response.json();
@@ -188,6 +194,14 @@ export async function appendEmailToSheet(
 
   if (!response.ok) {
     const errorBody = await response.text();
+    const isAuthError = response.status === 401 || errorBody.includes('UNAUTHENTICATED') || errorBody.includes('invalid authentication credentials');
+    
+    if (isAuthError) {
+      cachedAccessToken = null;
+      if (typeof window !== 'undefined') localStorage.removeItem('sou_google_access_token');
+      throw new Error('AUTH_EXPIRED');
+    }
+
     console.error('Append email to Google Sheet (Leads!A:B) failed, trying fallback:', errorBody);
     
     // Fallback: append to default sheet
@@ -211,8 +225,16 @@ export async function appendEmailToSheet(
 
     if (!responseFallback.ok) {
       const fallbackError = await responseFallback.text();
+      const isFallbackAuthError = responseFallback.status === 401 || fallbackError.includes('UNAUTHENTICATED');
+      
+      if (isFallbackAuthError) {
+        cachedAccessToken = null;
+        if (typeof window !== 'undefined') localStorage.removeItem('sou_google_access_token');
+        throw new Error('AUTH_EXPIRED');
+      }
+      
       console.error('Append fallback also failed:', fallbackError);
-      throw new Error(`Failed to append email to Google Sheet: ${responseFallback.statusText}`);
+      throw new Error(`Failed to append email to Google Sheet: ${responseFallback.statusText || 'Internal API Error'}`);
     }
     return responseFallback.json();
   }
@@ -237,8 +259,14 @@ export async function createGoogleDoc(accessToken: string, title: string): Promi
 
   if (!response.ok) {
     const errorBody = await response.text();
+    const isAuthError = response.status === 401 || errorBody.includes('UNAUTHENTICATED') || errorBody.includes('invalid authentication credentials');
+    if (isAuthError) {
+      cachedAccessToken = null;
+      if (typeof window !== 'undefined') localStorage.removeItem('sou_google_access_token');
+      throw new Error('AUTH_EXPIRED');
+    }
     console.error('Create Google Doc error response:', errorBody);
-    throw new Error(`Failed to create Google Document: ${response.statusText}`);
+    throw new Error(`Failed to create Google Document: ${response.statusText || 'Internal API Error'}`);
   }
 
   return response.json();
@@ -280,8 +308,14 @@ export async function appendEmailToDoc(accessToken: string, documentId: string, 
 
   if (!response.ok) {
     const errorBody = await response.text();
+    const isAuthError = response.status === 401 || errorBody.includes('UNAUTHENTICATED') || errorBody.includes('invalid authentication credentials');
+    if (isAuthError) {
+      cachedAccessToken = null;
+      if (typeof window !== 'undefined') localStorage.removeItem('sou_google_access_token');
+      throw new Error('AUTH_EXPIRED');
+    }
     console.error('Append email to Google Doc error response:', errorBody);
-    throw new Error(`Failed to append email to Google Document: ${response.statusText}`);
+    throw new Error(`Failed to append email to Google Document: ${response.statusText || 'Internal API Error'}`);
   }
 
   return response.json();
@@ -363,8 +397,14 @@ export async function sendConfirmationEmail(
 
   if (!response.ok) {
     const errorBody = await response.text();
+    const isAuthError = response.status === 401 || errorBody.includes('UNAUTHENTICATED') || errorBody.includes('invalid authentication credentials');
+    if (isAuthError) {
+      cachedAccessToken = null;
+      if (typeof window !== 'undefined') localStorage.removeItem('sou_google_access_token');
+      throw new Error('AUTH_EXPIRED');
+    }
     console.error('Failed to send confirmation email via Gmail API:', errorBody);
-    throw new Error(`Gmail API failed to send confirmation: ${response.statusText}`);
+    throw new Error(`Gmail API failed to send confirmation: ${response.statusText || 'Internal API Error'}`);
   }
 
   return response.json();
