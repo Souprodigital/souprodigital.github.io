@@ -4,6 +4,19 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell
+} from 'recharts';
 import {
   Sparkles,
   Search,
@@ -70,9 +83,144 @@ import {
 // Page 1 — Cover
 interface CoverPageProps {
   onStartJourney?: () => void;
+  language?: 'en' | 'es';
 }
 
-export function CoverPage({ onStartJourney }: CoverPageProps) {
+const translations = {
+  en: {
+    cover: {
+      tag: 'Aesthetic Swiss Modernist Publishing',
+      title: 'The Validation-First',
+      subtitle: 'AI Publishing Platform',
+      desc: 'Validate high-value educational ideas first, synthesize book assets into premium custom framework manuscripts, construct conversions-oriented sales channels and secure intellectual rights instantly.',
+      cta: 'Start Your Journey',
+      badges: [
+        { label: '01. RESEARCH', desc: 'Idea & Market Validation' },
+        { label: '02. SYNTHESIZE', desc: '10+ Chapter Blueprints' },
+        { label: '03. PUBLISH', desc: 'Live WYSIWYG Sales Pages' },
+        { label: '04. MONETIZE', desc: 'Secure Whop Distribution' }
+      ]
+    },
+    vision: {
+      tag: 'The Strategic Vision',
+      title: 'Democratizing',
+      subtitle: 'Elite Publishing.',
+      desc: "Our vision is to bridge the chasm between raw human knowledge and secure, multi-million dollar digital asset distribution. We don't just generate content; we architect authority.",
+      values: [
+        { label: 'AUTHENTICITY', desc: 'Synthesizing truth, not filler.' },
+        { label: 'SOVEREIGNTY', desc: 'Secure IP protection.' },
+        { label: 'VELOCITY', desc: 'Zero-code speed to market.' }
+      ]
+    }
+  },
+  es: {
+    cover: {
+      tag: 'Publicación Estética Modernista Suiza',
+      title: 'La Plataforma de',
+      subtitle: 'Publicación de IA por Validación',
+      desc: 'Valide primero sus ideas educativas de alto valor, sintetice activos de libros en manuscritos de marcos premium, construya canales de venta orientados a la conversión y asegure derechos intelectuales al instante.',
+      cta: 'Inicia Tu Viaje',
+      badges: [
+        { label: '01. INVESTIGACIÓN', desc: 'Validación de Idea y Mercado' },
+        { label: '02. SINTETIZAR', desc: 'Más de 10 Esquemas de Capítulos' },
+        { label: '03. PUBLICAR', desc: 'Páginas de Venta WYSIWYG' },
+        { label: '04. MONETIZAR', desc: 'Distribución Segura Whop' }
+      ]
+    },
+    vision: {
+      tag: 'La Visión Estratégica',
+      title: 'Democratizando la',
+      subtitle: 'Publicación de Élite.',
+      desc: 'Nuestra visión es cerrar la brecha entre el conocimiento humano puro y la distribución segura de activos digitales multimillonarios. No solo generamos contenido; arquitectamos autoridad.',
+      values: [
+        { label: 'AUTENTICIDAD', desc: 'Sintetizando verdad, no relleno.' },
+        { label: 'SOBERANÍA', desc: 'Protección de IP segura.' },
+        { label: 'VELOCIDAD', desc: 'Velocidad de salida sin código.' }
+      ]
+    },
+    growth: {
+      tag: '02.5 / ESCALANDO INTELIGENCIA',
+      label: 'SISTEMA DE RENDIMIENTO Y VELOCIDAD DE PROCESAMIENTO',
+      growthTitle: 'Crecimiento Exponencial de Validación',
+      growthSub: 'ACTIVOS TOTALES ARQUITECTADOS POR MES',
+      efficiencyTitle: 'Latencia de Síntesis de IA',
+      efficiencySub: 'TIEMPO TRANSCURRIDO DE PROCESAMIENTO (ms)',
+      stats: [
+        { label: 'Rendimiento Promedio', desc: 'Sintetización Extremo a Extremo' },
+        { label: 'Disponibilidad del Sistema', desc: 'Confiabilidad en la Nube' }
+      ]
+    },
+    overview: {
+      tag: '02 / RESUMEN EJECUTIVO',
+      label: 'FLUJO DE TRABAJO DEL SISTEMA SOUARCHITECT',
+      title: '¿Qué es SouArchitect?',
+      desc: 'SouArchitect es un espacio de trabajo de élite unificado que cierra la brecha entre la generación de contenido y la distribución digital segura. Los creadores tradicionales deben unir múltiples herramientas incompatibles, exponiendo sus libros y guías a altos costos y piratería masiva.',
+      nodes: [
+        { label: 'Validación de Idea', detail: 'Escáner de viabilidad pre-calcula intensidad de dolor y patrones de interés.' },
+        { label: 'Investigación y Síntesis', detail: 'La Cámara de Síntesis construye rutas de lecciones cognitivas y esquemas.' },
+        { label: 'Redacción Editorial', detail: 'Genera prosa educativa premium sin relleno genérico de IA ni listas.' },
+        { label: 'Constructor de Páginas', detail: 'Construye páginas de publicación con etiquetas SEO y módulos de archivos.' },
+        { label: 'Monetización Whop', detail: 'Puerta de suscripción inmediata, sistema OAuth y rutas de pago.' },
+        { label: 'Bóveda Encriptada', detail: 'Archivos procesados con tokens que expiran y defensas antipiratería.' }
+      ]
+    }
+  },
+  en: {
+    cover: {
+      tag: 'Aesthetic Swiss Modernist Publishing',
+      title: 'The Validation-First',
+      subtitle: 'AI Publishing Platform',
+      desc: 'Validate high-value educational ideas first, synthesize book assets into premium custom framework manuscripts, construct conversions-oriented sales channels and secure intellectual rights instantly.',
+      cta: 'Start Your Journey',
+      badges: [
+        { label: '01. RESEARCH', desc: 'Idea & Market Validation' },
+        { label: '02. SYNTHESIZE', desc: '10+ Chapter Blueprints' },
+        { label: '03. PUBLISH', desc: 'Live WYSIWYG Sales Pages' },
+        { label: '04. MONETIZE', desc: 'Secure Whop Distribution' }
+      ]
+    },
+    vision: {
+      tag: 'The Strategic Vision',
+      title: 'Democratizing',
+      subtitle: 'Elite Publishing.',
+      desc: "Our vision is to bridge the chasm between raw human knowledge and secure, multi-million dollar digital asset distribution. We don't just generate content; we architect authority.",
+      values: [
+        { label: 'AUTHENTICITY', desc: 'Synthesizing truth, not filler.' },
+        { label: 'SOVEREIGNTY', desc: 'Secure IP protection.' },
+        { label: 'VELOCITY', desc: 'Zero-code speed to market.' }
+      ]
+    },
+    growth: {
+      tag: '02.5 / SCALING INTELLIGENCE',
+      label: 'SYSTEM THROUGHPUT & PROCESSING VELOCITY',
+      growthTitle: 'Exponential Validation Growth',
+      growthSub: 'TOTAL ASSETS ARCHITECTED PER MONTH',
+      efficiencyTitle: 'AI Synthesis Latency',
+      efficiencySub: 'PROCESSING ELAPSED TIME (ms)',
+      stats: [
+        { label: 'Avg Throughput', desc: 'End-to-End Synthesis' },
+        { label: 'System Uptime', desc: 'Cloud Reliability' }
+      ]
+    },
+    overview: {
+      tag: '02 / EXECUTIVE OVERVIEW',
+      label: 'SOUARCHITECT SYSTEM WORKFLOW',
+      title: 'What is SouArchitect?',
+      desc: 'SouArchitect is a unified, elite workspace bridging the massive gap between content generation and secure digital distribution. Traditional digital creators have to tie together multiple incompatible tools, exposing their books and guides to high billing overhead and massive piracy.',
+      nodes: [
+        { label: 'Idea Validation', detail: 'Market feasibility scanner pre-calculates audience pain intensity & potential search interest patterns.' },
+        { label: 'Research & Synthesis', detail: 'The AI Synthesis Chamber scans context, builds cognitive lesson pathways & structured outlines.' },
+        { label: 'Editorial Writing', detail: 'Generate premium textbook-ready educational prose without generic AI filler or listicle structures.' },
+        { label: 'Content Page Builder', detail: 'Construct seamless publishing pages with direct SEO schema tags and customized file modules.' },
+        { label: 'Whop Monetization', detail: 'Immediate subscription gate, OAuth sign-on system, client payment routing, and user gates.' },
+        { label: 'Encrypted Vault', detail: 'Files are processed with expiring tokens, signed links, and dynamic anti-piracy watchdogs.' }
+      ]
+    }
+  }
+};
+
+export function CoverPage({ onStartJourney, language = 'en' }: CoverPageProps) {
+  const t = translations[language].cover;
   return (
     <div className="relative w-full min-h-full lg:h-full flex flex-col justify-between p-5 sm:p-6 md:p-8 lg:p-8 overflow-y-auto bg-[#111827]">
       {/* Structural backgrounds */}
@@ -86,11 +234,11 @@ export function CoverPage({ onStartJourney }: CoverPageProps) {
           <Logo fallbackBgClass="bg-gradient-to-br from-emerald-500 to-teal-400" logoText="S" />
           <div>
             <span className="font-sans font-extrabold tracking-tight text-white text-lg">SouArchitect</span>
-            <span className="text-xs text-gray-400 block font-mono -mt-1">by Soupro Digital Services</span>
+            <span className="text-xs text-gray-400 block font-mono -mt-1">{language === 'en' ? 'by Soupro Digital Services' : 'por Soupro Digital Services'}</span>
           </div>
         </div>
         <div className="flex items-center space-x-4 font-mono text-xs text-gray-400">
-          <span className="px-2.5 py-1 rounded bg-gray-800 tracking-wider">INVESTOR DECK - V1.4</span>
+          <span className="px-2.5 py-1 rounded bg-gray-800 tracking-wider font-bold uppercase">{language === 'en' ? 'INVESTOR DECK - V1.4' : 'PRESENTACIÓN INVERSOR - V1.4'}</span>
         </div>
       </div>
 
@@ -98,46 +246,36 @@ export function CoverPage({ onStartJourney }: CoverPageProps) {
       <div className="my-auto py-8 z-10 max-w-4xl">
         <div className="inline-flex items-center space-x-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full mb-6">
           <Sparkles className="w-4 h-4 text-emerald-400" />
-          <span className="text-xs font-mono text-emerald-400 font-semibold uppercase tracking-wider">Aesthetic Swiss Modernist Publishing</span>
+          <span className="text-xs font-mono text-emerald-400 font-semibold uppercase tracking-wider">{t.tag}</span>
         </div>
 
         <h1 className="text-5xl lg:text-7xl font-sans font-extrabold tracking-tighter text-white leading-[1.1] mb-6">
-          The Validation-First <br/>
+          {t.title} <br/>
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-blue-400">
-            AI Publishing Platform
+            {t.subtitle}
           </span>
         </h1>
 
         <p className="text-base lg:text-lg text-gray-300 font-sans leading-relaxed tracking-wide max-w-2xl mb-8">
-          Validate high-value educational ideas first, synthesize book assets into premium custom framework manuscripts, construct conversions-oriented sales channels and secure intellectual rights instantly.
+          {t.desc}
         </p>
 
         <button
           onClick={onStartJourney}
           className="mb-8 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-sans font-extrabold text-sm uppercase tracking-widest rounded-lg flex items-center gap-3 transition-all cursor-pointer active:scale-[0.98] shadow-lg shadow-emerald-500/20 group"
         >
-          <span>Start Your Journey</span>
+          <span>{t.cta}</span>
           <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
         </button>
 
         {/* Dynamic Badges */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl">
-          <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-lg">
-            <span className="font-mono text-xs text-emerald-400 block mb-1">01. RESEARCH</span>
-            <span className="font-sans font-semibold text-white">Idea & Market Validation</span>
-          </div>
-          <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-lg">
-            <span className="font-mono text-xs text-emerald-400 block mb-1">02. SYNTHESIZE</span>
-            <span className="font-sans font-semibold text-white">10+ Chapter Blueprints</span>
-          </div>
-          <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-lg">
-            <span className="font-mono text-xs text-emerald-400 block mb-1">03. PUBLISH</span>
-            <span className="font-sans font-semibold text-white">Live WYSIWYG Sales Pages</span>
-          </div>
-          <div className="bg-gray-900/60 border border-gray-800 p-4 rounded-lg">
-            <span className="font-mono text-xs text-emerald-400 block mb-1">04. MONETIZE</span>
-            <span className="font-sans font-semibold text-white">Secure Whop Distribution</span>
-          </div>
+          {t.badges.map((badge, idx) => (
+            <div key={idx} className="bg-gray-900/60 border border-gray-800 p-4 rounded-lg">
+              <span className="font-mono text-xs text-emerald-400 block mb-1 uppercase font-bold tracking-widest">{badge.label}</span>
+              <span className="font-sans font-semibold text-white text-xs leading-tight block">{badge.desc}</span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -149,36 +287,243 @@ export function CoverPage({ onStartJourney }: CoverPageProps) {
             <span className="text-white">www.souarchitect.com</span>
           </div>
           <div>
-            <span className="text-gray-500 block">PARENT CORP</span>
+            <span className="text-gray-500 block uppercase font-bold tracking-tighter text-[9px] mb-0.5">{language === 'en' ? 'PARENT CORP' : 'EMPRESA MATRIZ'}</span>
             <span className="text-white">Soupro Digital Services</span>
           </div>
           <div>
-            <span className="text-gray-500 block">PLATFORM ACCESS</span>
-            <span className="text-emerald-400 flex items-center gap-1">
-              Active Integration <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
+            <span className="text-gray-500 block uppercase font-bold tracking-tight text-[9px] mb-0.5">{language === 'en' ? 'PLATFORM ACCESS' : 'ACCESO PLATAFORMA'}</span>
+            <span className="text-emerald-400 flex items-center gap-1 font-bold">
+              {language === 'en' ? 'Active Integration' : 'Integración Activa'} <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
             </span>
           </div>
         </div>
         <div className="text-right">
-          <span className="font-mono text-xs text-gray-500 block">PRIMARY ENTRANCE</span>
-          <span className="font-sans font-semibold text-white text-sm">Scan / Click To Enter Presentation</span>
+          <span className="font-mono text-xs text-gray-500 block uppercase font-bold tracking-tight text-[9px] mb-0.5">{language === 'en' ? 'PRIMARY ENTRANCE' : 'ENTRADA PRINCIPAL'}</span>
+          <span className="font-sans font-semibold text-white text-sm">{language === 'en' ? 'Scan / Click To Enter Presentation' : 'Escanear / Clic para Entrar'}</span>
         </div>
       </div>
     </div>
   );
 }
 
+// Page 1.5 — Platform Vision
+export function VisionPage({ language = 'en' }: { language?: 'en' | 'es' }) {
+  const t = translations[language].vision;
+  return (
+    <div className="relative w-full min-h-full lg:h-full flex flex-col justify-center items-center p-8 overflow-hidden bg-[#0A0F1B]">
+      {/* Subtle Animated Background */}
+      <motion.div 
+        animate={{ 
+          scale: [1, 1.15, 1],
+          opacity: [0.2, 0.4, 0.2],
+        }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-emerald-500/10 rounded-full blur-[140px] pointer-events-none"
+      />
+      
+      <div className="absolute inset-0 modern-grid opacity-10 pointer-events-none"></div>
+
+      <div className="z-10 text-center max-w-4xl space-y-8">
+        <motion.div
+           initial={{ opacity: 0, y: 30 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 1, ease: "easeOut" }}
+        >
+          <span className="font-mono text-emerald-400 text-xs tracking-[0.4em] uppercase mb-6 block font-bold">{t.tag}</span>
+          <h2 className="text-5xl md:text-8xl font-sans font-extrabold tracking-tighter text-white leading-none">
+            {t.title} <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-br from-emerald-400 to-teal-500">
+              {t.subtitle}
+            </span>
+          </h2>
+        </motion.div>
+
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 1.2 }}
+          className="text-lg md:text-xl text-gray-400 font-sans font-light leading-relaxed tracking-tight max-w-2xl mx-auto"
+        >
+          {t.desc}
+        </motion.p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12">
+          {t.values.map((item, i) => (
+            <motion.div 
+              key={item.label}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.8 + (i * 0.15), duration: 0.6 }}
+              whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+              className="bg-white/[0.02] border border-white/10 p-6 rounded-2xl backdrop-blur-sm transition-colors"
+            >
+              <div className="font-mono text-emerald-400 text-[10px] font-bold mb-2 tracking-widest uppercase">{item.label}</div>
+              <div className="text-white font-sans text-sm font-medium leading-tight">{item.desc}</div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const THROUGHPUT_DATA = [
+  { month: 'JAN', volume: 450 },
+  { month: 'FEB', volume: 680 },
+  { month: 'MAR', volume: 920 },
+  { month: 'APR', volume: 1450 },
+  { month: 'MAY', volume: 2200 },
+  { month: 'JUN', volume: 3800 },
+  { month: 'JUL', volume: 5400 },
+  { month: 'AUG', volume: 8100 },
+];
+
+const PROCESSING_EFFICIENCY = [
+  { stage: 'Validation', ms: 1200 },
+  { stage: 'Synthesis', ms: 4500 },
+  { stage: 'Editorial', ms: 8200 },
+  { stage: 'Publishing', ms: 900 },
+  { stage: 'Protection', ms: 300 },
+];
+
+export function GrowthChartsPage({ language = 'en' }: { language?: 'en' | 'es' }) {
+  const t = translations[language].growth;
+  return (
+    <div className="relative w-full min-h-full lg:h-full flex flex-col justify-between p-5 sm:p-6 md:p-8 lg:p-8 overflow-y-auto bg-[#0A0F1B]">
+      <div className="absolute inset-0 modern-grid pointer-events-none opacity-20"></div>
+      
+      <div className="flex justify-between items-center border-b border-gray-800 pb-3">
+        <span className="font-mono text-xs text-emerald-400 tracking-widest uppercase">{t.tag}</span>
+        <span className="font-mono text-xs text-gray-500 uppercase">{t.label}</span>
+      </div>
+
+      <div className="my-auto grid grid-cols-1 lg:grid-cols-2 gap-8 py-8">
+        {/* Growth Chart */}
+        <div className="bg-gray-900/40 border border-white/5 rounded-2xl p-6 backdrop-blur-sm relative overflow-hidden">
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <h3 className="text-xl font-sans font-extrabold text-white tracking-tight">{t.growthTitle}</h3>
+              <p className="text-xs text-gray-400 font-mono mt-1 uppercase">{t.growthSub}</p>
+            </div>
+            <div className="bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded font-mono text-[10px] font-bold">
+              +542% YOY
+            </div>
+          </div>
+
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={THROUGHPUT_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.3} />
+                <XAxis 
+                  dataKey="month" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }} 
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'monospace' }} 
+                />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#111827', border: '1px solid #334155', borderRadius: '8px', fontSize: '12px' }}
+                  itemStyle={{ color: '#10b981' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="volume" 
+                  stroke="#10b981" 
+                  strokeWidth={2}
+                  fillOpacity={1} 
+                  fill="url(#colorVolume)" 
+                  animationDuration={2000}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Efficiency Chart */}
+        <div className="bg-gray-900/40 border border-white/5 rounded-2xl p-6 backdrop-blur-sm relative overflow-hidden">
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <h3 className="text-xl font-sans font-extrabold text-white tracking-tight">{t.efficiencyTitle}</h3>
+              <p className="text-xs text-gray-400 font-mono mt-1 uppercase">{t.efficiencySub}</p>
+            </div>
+            <div className="bg-blue-500/10 text-blue-400 px-2 py-1 rounded font-mono text-[10px] font-bold">
+              {language === 'en' ? 'OPTIMIZED' : 'OPTIMIZADO'}
+            </div>
+          </div>
+
+          <div className="h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={PROCESSING_EFFICIENCY} layout="vertical" margin={{ top: 0, right: 30, left: 40, bottom: 0 }}>
+                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#334155" opacity={0.3} />
+                <XAxis type="number" hide />
+                <YAxis 
+                  dataKey="stage" 
+                  type="category" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#e2e8f0', fontSize: 10, fontFamily: 'sans-serif', fontWeight: 600 }}
+                />
+                <Tooltip 
+                   cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                   contentStyle={{ backgroundColor: '#111827', border: '1px solid #334155', borderRadius: '8px', fontSize: '12px' }}
+                />
+                <Bar dataKey="ms" radius={[0, 4, 4, 0]} animationDuration={2500}>
+                  {
+                    PROCESSING_EFFICIENCY.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#10b981' : '#3b82f6'} />
+                    ))
+                  }
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          
+          <div className="mt-4 grid grid-cols-2 gap-4 text-left">
+            <div className="p-3 bg-white/5 rounded-lg border border-white/5">
+              <span className="font-mono text-[9px] text-gray-400 uppercase tracking-widest font-bold">{t.stats[0].label}</span>
+              <div className="text-lg font-sans font-bold text-white leading-none mt-1">12.4s</div>
+              <div className="text-[9px] text-emerald-400 mt-1 uppercase font-bold tracking-tight">{t.stats[0].desc}</div>
+            </div>
+            <div className="p-3 bg-white/5 rounded-lg border border-white/5">
+              <span className="font-mono text-[9px] text-gray-400 uppercase tracking-widest font-bold">{t.stats[1].label}</span>
+              <div className="text-lg font-sans font-bold text-white leading-none mt-1">99.98%</div>
+              <div className="text-[9px] text-blue-400 mt-1 uppercase font-bold tracking-tight">{t.stats[1].desc}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-800 pt-3 uppercase font-bold tracking-wider font-mono">
+        <span>{language === 'en' ? 'INVESTOR-GRADE ANALYTICS' : 'ANALÍTICA PARA INVERSORES'}</span>
+        <span>SOUARCHITECT INFRASTRUCTURE</span>
+      </div>
+    </div>
+  );
+}
+
 // Page 2 — Executive Overview
-export function ExecutiveOverviewPage() {
+export function ExecutiveOverviewPage({ language = 'en' }: { language?: 'en' | 'es' }) {
   const [activeStep, setActiveStep] = useState<number>(0);
+  const t = translations[language].overview;
   
   const workflowNodes = [
-    { id: 0, label: 'Idea Validation', detail: 'Market feasibility scanner pre-calculates audience pain intensity & potential search interest patterns.', stat: '94% Validation Accuracy', icon: Search },
-    { id: 1, label: 'Research & Synthesis', detail: 'The AI Synthesis Chamber scans context, builds cognitive lesson pathways & structured outlines.', stat: '10+ Chapter Depth', icon: Sparkles },
-    { id: 2, label: 'Editorial Writing', detail: 'Generate premium textbook-ready educational prose without generic AI filler or listicle structures.', stat: 'Custom Voice Metrics', icon: BookOpen },
-    { id: 3, label: 'Content Page Builder', detail: 'Construct seamless publishing pages with direct SEO schema tags and customized file modules.', stat: 'WYSIWYG Live Host', icon: Globe },
-    { id: 4, label: 'Whop Monetization', detail: 'Immediate subscription gate, OAuth sign-on system, client payment routing, and user gates.', stat: 'Zero-Code Gates', icon: Award },
-    { id: 5, label: 'Encrypted Vault', detail: 'Files are processed with expiring tokens, signed links, and dynamic anti-piracy watchdogs.', stat: '99.9% IP Leak Protection', icon: Lock }
+    { id: 0, label: t.nodes[0].label, detail: t.nodes[0].detail, stat: '94% Validation Accuracy', icon: Search },
+    { id: 1, label: t.nodes[1].label, detail: t.nodes[1].detail, stat: '10+ Chapter Depth', icon: Sparkles },
+    { id: 2, label: t.nodes[2].label, detail: t.nodes[2].detail, stat: 'Custom Voice Metrics', icon: BookOpen },
+    { id: 3, label: t.nodes[3].label, detail: t.nodes[3].detail, stat: 'WYSIWYG Live Host', icon: Globe },
+    { id: 4, label: t.nodes[4].label, detail: t.nodes[4].detail, stat: 'Zero-Code Gates', icon: Award },
+    { id: 5, label: t.nodes[5].label, detail: t.nodes[5].detail, stat: '99.9% IP Leak Protection', icon: Lock }
   ];
 
   return (
@@ -187,23 +532,23 @@ export function ExecutiveOverviewPage() {
       
       {/* Slidename */}
       <div className="flex justify-between items-center border-b border-gray-800 pb-3">
-        <span className="font-mono text-xs text-emerald-400 tracking-widest uppercase">02 / EXECUTIVE OVERVIEW</span>
-        <span className="font-mono text-xs text-gray-500">SOUARCHITECT SYSTEM WORKFLOW</span>
+        <span className="font-mono text-xs text-emerald-400 tracking-widest uppercase">{t.tag}</span>
+        <span className="font-mono text-xs text-gray-500 uppercase">{t.label}</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 my-auto">
         {/* Left Explanation Column */}
-        <div className="lg:col-span-5 flex flex-col justify-center space-y-6">
+        <div className="lg:col-span-5 flex flex-col justify-center space-y-6 text-left">
           <h2 className="text-4xl font-sans font-extrabold tracking-tight text-white leading-tight">
-            What is SouArchitect?
+            {t.title}
           </h2>
           <p className="text-gray-300 font-sans text-sm leading-relaxed">
-            SouArchitect is a unified, elite workspace bridging the massive gap between <strong>content generation</strong> and <strong>secure digital distribution</strong>. Traditional digital creators have to tie together multiple incompatible tools, exposing their books and guides to high billing overhead and massive piracy.
+            {t.desc}
           </p>
           <div className="p-5 bg-gray-900/80 border border-gray-800 rounded-lg">
-            <span className="font-mono text-xs text-emerald-400 block mb-1">INTERACTIVE PREVIEW</span>
+            <span className="font-mono text-xs text-emerald-400 block mb-1 uppercase font-bold tracking-widest">{language === 'en' ? 'INTERACTIVE PREVIEW' : 'VISTA INTERACTIVA'}</span>
             <p className="text-xs text-gray-400">
-              Click any node in the system diagram on the right to simulate the secure end-to-end user publishing pipeline.
+              {language === 'en' ? 'Click any node in the system diagram on the right to simulate the secure end-to-end user publishing pipeline.' : 'Haz clic en cualquier nodo del diagrama de la derecha para simular el pipeline de publicación seguro.'}
             </p>
           </div>
         </div>
@@ -227,7 +572,7 @@ export function ExecutiveOverviewPage() {
                 >
                   {/* Step counter */}
                   <span className="absolute top-2 right-2 font-mono text-[10px] text-gray-500">
-                    STEP 0{idx + 1}
+                    {language === 'en' ? 'STEP' : 'PASO'} 0{idx + 1}
                   </span>
 
                   <div className={`p-2 w-max rounded mb-3 ${isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-800 text-gray-400'}`}>
@@ -245,15 +590,15 @@ export function ExecutiveOverviewPage() {
           </div>
 
           {/* Active Detail Display */}
-          <div className="mt-4 p-4 bg-[#1F2937]/90 border border-emerald-500/30 rounded-lg flex items-start gap-4">
+          <div className="mt-4 p-4 bg-[#1F2937]/90 border border-emerald-500/30 rounded-lg flex items-start gap-4 text-left">
             <div className="p-2.5 bg-emerald-500/10 rounded text-emerald-400 shrink-0">
               {React.createElement(workflowNodes[activeStep].icon, { className: 'w-6 h-6' })}
             </div>
             <div>
-              <span className="font-mono text-[10px] text-gray-400 block tracking-wider uppercase">Active Phase Spec: {workflowNodes[activeStep].label}</span>
+              <span className="font-mono text-[10px] text-gray-400 block tracking-wider uppercase font-bold">{language === 'en' ? 'Active Phase Spec:' : 'Fase Activa:'} {workflowNodes[activeStep].label}</span>
               <p className="text-sm text-gray-200 mt-1">{workflowNodes[activeStep].detail}</p>
               <div className="flex gap-4 mt-2 text-xs font-mono">
-                <span className="text-emerald-400">Target Efficiency: {workflowNodes[activeStep].stat}</span>
+                <span className="text-emerald-400">{language === 'en' ? 'Target Efficiency:' : 'Eficiencia Objetivo:'} {workflowNodes[activeStep].stat}</span>
                 <span className="text-gray-500">| Status: Verified Cloud Run Service</span>
               </div>
             </div>
@@ -262,7 +607,7 @@ export function ExecutiveOverviewPage() {
         </div>
       </div>
 
-      <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-800 pt-3">
+      <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-800 pt-3 font-mono uppercase font-bold tracking-tight">
         <span>SWISS GRID ARCHITECTURE</span>
         <span>SOUPRO DIGITAL SERVICES</span>
       </div>

@@ -22,7 +22,8 @@ import {
   HelpCircle,
   Download,
   Check,
-  RefreshCw
+  RefreshCw,
+  Languages
 } from 'lucide-react';
 import {
   CoverPage,
@@ -38,7 +39,9 @@ import {
   CompetitiveAdvantagePage,
   IdealUsersPage,
   CompanyStoryPage,
-  ContactPage
+  ContactPage,
+  VisionPage,
+  GrowthChartsPage
 } from './SlidesList';
 import { Logo } from './Logo';
 
@@ -157,6 +160,7 @@ export function PresentationShell({}: PresentationShellProps) {
   const [viewMode, setViewMode] = useState<'presentation' | 'document'>('presentation');
   const [scaleMode, setScaleMode] = useState<'fit' | 'normal'>('fit');
   const [themeMode, setThemeMode] = useState<'charcoal' | 'high-contrast-light'>('charcoal');
+  const [language, setLanguage] = useState<'en' | 'es'>('en');
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playSpeed, setPlaySpeed] = useState<number>(5000); // ms
   const [showHelp, setShowHelp] = useState<boolean>(false);
@@ -175,11 +179,11 @@ export function PresentationShell({}: PresentationShellProps) {
     type: 'png'
   });
 
-  const totalSlides = 14;
+  const totalSlides = 16;
 
   const handleStartJourney = () => {
     if (viewMode === 'presentation') {
-      setActiveSlideIdx(13); // Index of ContactPage
+      setActiveSlideIdx(15); // Index of ContactPage (shifted)
     } else {
       const element = document.getElementById('booking-form-wrapper');
       if (element) {
@@ -188,41 +192,67 @@ export function PresentationShell({}: PresentationShellProps) {
     }
   };
 
-  const slidesMetadata = [
-    { num: '01', title: 'Cover Title Spec', category: 'BRAND' },
-    { num: '02', title: 'Executive Overview', category: 'PRODUCT SUMMARY' },
-    { num: '03', title: 'The Problem Matrix', category: 'MARKET CRACK' },
-    { num: '04', title: 'The Solution Loop', category: 'METHODOLOGY' },
-    { num: '05', title: 'Market Validation Engine', category: 'PRODUCT SUITE' },
-    { num: '06', title: 'Book Synthesis Studio', category: 'PRODUCT SUITE' },
-    { num: '07', title: 'Live Publishing Studio', category: 'PRODUCT SUITE' },
-    { num: '08', title: 'Monetization Gate', category: 'INTEGRATIONS' },
-    { num: '09', title: 'Security & Delivery Vault', category: 'INTEGRATIONS' },
-    { num: '10', title: 'Analytics Command Center', category: 'KPI DASHBOARDS' },
-    { num: '11', title: 'Competitive Advantage', category: 'COMPARATIVES' },
-    { num: '12', title: 'Ideal Customer Archetypes', category: 'AUDIENCES' },
-    { num: '13', title: 'About Soupro Services', category: 'BUSINESS ROADMAP' },
-    { num: '14', title: 'Interactive Call Dynamic', category: 'ACTION DIRECTORY' },
-  ];
+  const slidesMetadata = {
+    en: [
+      { num: '01', title: 'Cover Title Spec', category: 'BRAND' },
+      { num: '02', title: 'The Platform Vision', category: 'STRATEGY' },
+      { num: '03', title: 'Scaling Intelligence', category: 'ANALYTICS' },
+      { num: '04', title: 'Executive Overview', category: 'PRODUCT SUMMARY' },
+      { num: '05', title: 'The Problem Matrix', category: 'MARKET CRACK' },
+      { num: '06', title: 'The Solution Loop', category: 'METHODOLOGY' },
+      { num: '07', title: 'Market Validation Engine', category: 'PRODUCT SUITE' },
+      { num: '08', title: 'Book Synthesis Studio', category: 'PRODUCT SUITE' },
+      { num: '09', title: 'Live Publishing Studio', category: 'PRODUCT SUITE' },
+      { num: '10', title: 'Monetization Gate', category: 'INTEGRATIONS' },
+      { num: '11', title: 'Security & Delivery Vault', category: 'INTEGRATIONS' },
+      { num: '12', title: 'Analytics Command Center', category: 'KPI DASHBOARDS' },
+      { num: '13', title: 'Competitive Advantage', category: 'COMPARATIVES' },
+      { num: '14', title: 'Ideal Customer Archetypes', category: 'AUDIENCES' },
+      { num: '15', title: 'About Soupro Services', category: 'BUSINESS ROADMAP' },
+      { num: '16', title: 'Interactive Call Dynamic', category: 'ACTION DIRECTORY' },
+    ],
+    es: [
+      { num: '01', title: 'Portada y Título', category: 'MARCA' },
+      { num: '02', title: 'Visión de Plataforma', category: 'ESTRATEGIA' },
+      { num: '03', title: 'Escalando Inteligencia', category: 'ANÁLISIS' },
+      { num: '04', title: 'Resumen Ejecutivo', category: 'RESUMEN' },
+      { num: '05', title: 'Matriz de Problemas', category: 'MERCADO' },
+      { num: '06', title: 'Bucle de Soluciones', category: 'METODOLOGÍA' },
+      { num: '07', title: 'Escalador de Validación', category: 'PRODUCTOS' },
+      { num: '08', title: 'Estudio de Síntesis', category: 'PRODUCTOS' },
+      { num: '09', title: 'Publicación en Vivo', category: 'PRODUCTOS' },
+      { num: '10', title: 'Puerta de Monetización', category: 'INTEGRACIÓN' },
+      { num: '11', title: 'Bóveda de Seguridad', category: 'INTEGRACIÓN' },
+      { num: '12', title: 'Centro de Analíticas', category: 'MANDOS' },
+      { num: '13', title: 'Ventaja Competitiva', category: 'COMPARATIVAS' },
+      { num: '14', title: 'Arquetipos de Usuario', category: 'AUDIENCIAS' },
+      { num: '15', title: 'Sobre Servicios Soupro', category: 'HOJA DE RUTA' },
+      { num: '16', title: 'Llamada Interactiva', category: 'ACCIÓN' },
+    ]
+  };
+
+  const currentMetadata = slidesMetadata[language];
 
   // Helper renderer matching slide indices to Slide Components
   const renderSlideComponent = (idx: number) => {
     switch (idx) {
-      case 0: return <CoverPage onStartJourney={handleStartJourney} />;
-      case 1: return <ExecutiveOverviewPage />;
-      case 2: return <ProblemPage />;
-      case 3: return <SolutionPage />;
-      case 4: return <MarketValidationPage />;
-      case 5: return <BookSynthesisPage />;
-      case 6: return <LivePublishingPage />;
-      case 7: return <MonetizationPage />;
-      case 8: return <SecurityVaultPage />;
-      case 9: return <AnalyticsCommandPage />;
-      case 10: return <CompetitiveAdvantagePage />;
-      case 11: return <IdealUsersPage />;
-      case 12: return <CompanyStoryPage />;
-      case 13: return <ContactPage />;
-      default: return <CoverPage />;
+      case 0: return <CoverPage onStartJourney={handleStartJourney} language={language} />;
+      case 1: return <VisionPage language={language} />;
+      case 2: return <GrowthChartsPage language={language} />;
+      case 3: return <ExecutiveOverviewPage language={language} />;
+      case 4: return <ProblemPage language={language} />;
+      case 5: return <SolutionPage language={language} />;
+      case 6: return <MarketValidationPage language={language} />;
+      case 7: return <BookSynthesisPage language={language} />;
+      case 8: return <LivePublishingPage language={language} />;
+      case 9: return <MonetizationPage language={language} />;
+      case 10: return <SecurityVaultPage language={language} />;
+      case 11: return <AnalyticsCommandPage language={language} />;
+      case 12: return <CompetitiveAdvantagePage language={language} />;
+      case 13: return <IdealUsersPage language={language} />;
+      case 14: return <CompanyStoryPage language={language} />;
+      case 15: return <ContactPage language={language} />;
+      default: return <CoverPage onStartJourney={handleStartJourney} language={language} />;
     }
   };
 
@@ -505,7 +535,7 @@ export function PresentationShell({}: PresentationShellProps) {
                 <div className="space-y-1.5 pt-2 border-t border-slate-border">
                   <div className="flex justify-between items-center">
                     <span className="text-[10px] font-semibold text-gray-400 uppercase font-mono">Full Presentation Deck</span>
-                    <span className="px-1 py-0.5 text-[8px] font-mono text-validation-orange bg-validation-orange/10 rounded border border-validation-orange/20 font-bold">14 SLIDES</span>
+                    <span className="px-1 py-0.5 text-[8px] font-mono text-validation-orange bg-validation-orange/10 rounded border border-validation-orange/20 font-bold">16 SLIDES</span>
                   </div>
                   <button
                     onClick={() => {
@@ -551,6 +581,26 @@ export function PresentationShell({}: PresentationShellProps) {
             )}
           </div>
 
+          {/* Language Toggle */}
+          <div className="inline-flex bg-slate-blue/60 p-1 rounded-md border border-slate-border">
+            <button
+              onClick={() => setLanguage('en')}
+              className={`px-2.5 py-1 text-[10px] font-mono rounded flex items-center gap-1 transition-all cursor-pointer ${
+                language === 'en' ? 'bg-validation-orange text-gray-950 font-bold' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => setLanguage('es')}
+              className={`px-2.5 py-1 text-[10px] font-mono rounded flex items-center gap-1 transition-all cursor-pointer ${
+                language === 'es' ? 'bg-validation-orange text-gray-950 font-bold' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              ES
+            </button>
+          </div>
+
           {/* Help Toggle */}
           <button
             onClick={() => setShowHelp(!showHelp)}
@@ -569,7 +619,7 @@ export function PresentationShell({}: PresentationShellProps) {
           <div className="space-y-4">
             <span className="font-mono text-[9px] text-gray-400 uppercase tracking-widest block font-bold">TABLE OF CONTENTS</span>
             <div className="space-y-1">
-              {slidesMetadata.map((meta, idx) => {
+              {currentMetadata.map((meta, idx) => {
                 const isActive = idx === activeSlideIdx && viewMode === 'presentation';
                 return (
                   <button
@@ -651,7 +701,7 @@ export function PresentationShell({}: PresentationShellProps) {
                     <ChevronLeft className="w-4 h-4 text-validation-orange" />
                   </button>
                   <span className="font-mono text-[11px] text-gray-400 uppercase font-bold tracking-wider">
-                    SLIDE {activeSlideIdx + 1} OF 14
+                    SLIDE {activeSlideIdx + 1} OF 16
                   </span>
                   <button
                     onClick={() => setActiveSlideIdx((prev) => (prev + 1) % totalSlides)}
@@ -704,8 +754,8 @@ export function PresentationShell({}: PresentationShellProps) {
               {[...Array(totalSlides)].map((_, idx) => (
                 <div key={idx} className="space-y-3 relative group">
                   <div className="flex justify-between items-center text-xs font-mono text-gray-500 border-b border-slate-border pb-1.5">
-                    <span>SECTION GATED 0{idx + 1} / 14</span>
-                    <span className="text-validation-orange font-bold uppercase">{slidesMetadata[idx].category}</span>
+                    <span>SECTION GATED 0{idx + 1} / 16</span>
+                    <span className="text-validation-orange font-bold uppercase">{currentMetadata[idx].category}</span>
                   </div>
 
                   {/* Scalable Aspect-Ratio Frame Container */}
